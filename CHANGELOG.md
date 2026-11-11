@@ -1,0 +1,23 @@
+<!--
+這個檔案是什麼：media-downloader 的改版紀錄，每個版本一節（Keep a Changelog 格式）。
+使用者看得到的改動寫進 [Unreleased]；發版時改成 [x.y.z] - YYYY-MM-DD。
+Release 說明從這裡取。
+推上 GitHub：可以。公開前改寫成英文。
+-->
+
+# 改版紀錄
+
+這個專案所有值得注意的改動都記在這裡。
+格式依照 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，版本號依照 [語意化版本](https://semver.org/lang/zh-TW/)。
+
+## [Unreleased]
+
+### 新增
+
+- 專案骨架：pywebview 視窗載入 React 介面，畫面顯示 App 名稱與後端連線狀態（繁體中文、英文）。
+- 開發用指令 `scripts/dev.py`、一鍵檢查 `scripts/check.py`、CI 與 gitleaks 的 pre-commit 檢查。
+- MIT 授權。
+
+### 變更
+
+### 修正

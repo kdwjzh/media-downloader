@@ -1,0 +1,10 @@
+{
+  "app": {
+    "name": "Media Downloader"
+  },
+  "backend": {
+    "connecting": "Connecting to the backend…",
+    "connected": "Backend connected",
+    "failed": "Can't reach the backend. Restart the app."
+  }
+}

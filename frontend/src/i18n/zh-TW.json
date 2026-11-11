@@ -1,0 +1,10 @@
+{
+  "app": {
+    "name": "Media Downloader"
+  },
+  "backend": {
+    "connecting": "正在連線到後端…",
+    "connected": "後端已連線",
+    "failed": "無法連線到後端，請重新啟動程式"
+  }
+}

@@ -1,0 +1,43 @@
+PROGRESS.md
+notes/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage/
+
+# Node
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+*.local
+
+# 外部執行檔（由 scripts/ 下載，不進 git）
+bin/
+*.exe
+
+# 打包產物
+build/
+dist/
+*.spec.bak
+packaging/output/
+
+# 環境與機密
+.env
+.env.*
+cookies*.txt
+
+# 編輯器與系統
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*.log
+.claude/settings.local.json
