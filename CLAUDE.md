@@ -149,6 +149,12 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 
 - 呼叫任何外部程式都要隱藏主控台視窗，並以 UTF-8 處理輸出。
 - yt-dlp 的參數查官方文件確認，不憑記憶寫。
+- 呼叫 yt-dlp 的坑（依據見 `docs/技術驗證.md`）：
+  - 一律帶 `--ignore-config`、`--encoding utf-8`、`--color never`、`--ffmpeg-location`；不加 `--encoding utf-8` 輸出會是系統的 cp950。
+  - Deno 用 `--js-runtimes deno:<絕對路徑>` 指定；相對路徑會找不到。
+  - `--print` 會進入安靜模式，要下載進度就得再加 `--progress`。
+  - 取消要結束整棵程序樹：`yt-dlp.exe` 是兩層程序，只結束外層，內層和 FFmpeg 會繼續跑。
+  - 失敗的結束代碼一律是 1，錯誤分類靠 stderr 的 `ERROR:` 文字。
 
 ### UI 工作流程（ui-ux-pro-max + frontend-design）
 
