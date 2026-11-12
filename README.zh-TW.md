@@ -38,6 +38,12 @@ cd frontend && npm install
 python scripts/dev.py
 ```
 
+下載外部程式（yt-dlp、FFmpeg、Deno）到 `bin/`，並核對官方提供的 SHA-256；`bin/` 不進 git：
+
+```bash
+python scripts/fetch_binaries.py
+```
+
 送出前跑一鍵檢查（後端與介面的 lint、型別檢查、測試）：
 
 ```bash
