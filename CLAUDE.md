@@ -38,6 +38,7 @@ Claude Code 每次開工會自動讀。
 | 語言／框架 | 後端 Python 3.12+；介面 React + TypeScript + Vite + Tailwind | 下載邏輯留在 Python；介面用網頁技術才能套用 UI 設計流程。見 `docs/decisions/0001` |
 | 桌面外殼 | pywebview（Windows 上用 WebView2） | 單一程序、兩種語言，比 Tauri 好維護。見 `0002` |
 | 下載引擎 | 呼叫 yt-dlp 官方執行檔，搭配 Deno 與 FFmpeg；不 `import yt_dlp` | yt-dlp 可獨立更新、取消就是結束程序。見 `0003` |
+| 外部程式位置 | 安裝檔採「僅目前使用者」安裝到 `%LOCALAPPDATA%\Programs`，外部程式放在安裝資料夾 | yt-dlp 自我更新需要資料夾可寫入。見 `0005` |
 | 介面狀態 | Zustand | 輕量，佇列狀態集中管理 |
 | 介面語言 | 繁體中文、英文，react-i18next，預設跟隨系統 | 給別人用 |
 | 儲存 | 設定用 JSON、歷史紀錄用 SQLite，放 `%APPDATA%` | SQLite 是 Python 內建，之後好做搜尋 |
