@@ -16,7 +16,7 @@
 
 ## 決定
 
-把 yt-dlp 官方執行檔當成獨立程式呼叫，不 `import yt_dlp`。隨 App 附帶 yt-dlp、Deno、FFmpeg（含 ffprobe）。
+把 yt-dlp 官方執行檔當成獨立程式呼叫，不 `import yt_dlp`。隨 App 附帶 yt-dlp、Deno、FFmpeg（含 ffprobe；技術驗證後改為不附 ffprobe，見 `docs/技術驗證.md` 的 D6）。
 
 ## 理由
 
