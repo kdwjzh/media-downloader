@@ -1,0 +1,38 @@
+import { useTranslation } from 'react-i18next'
+import type { Format } from '../types'
+
+// The shape tells the format: MP3 is a square cover, MP4 stays 16:9.
+// The column in a list keeps the 16:9 width either way so titles line up.
+const sizes = {
+  row: { column: 'w-23', mp3: 'size-13', mp4: 'h-13 w-23' },
+  preview: { column: '', mp3: 'size-24', mp4: 'h-[90px] w-40' },
+}
+
+interface Props {
+  format: Format
+  color?: string
+  size?: keyof typeof sizes
+  loading?: boolean
+}
+
+export function Thumb({ format, color, size = 'row', loading = false }: Props) {
+  const s = sizes[size]
+  return (
+    <div className={`${s.column} shrink-0`} aria-hidden="true">
+      <div
+        className={`${s[format]} rounded-md bg-divider ${loading ? 'animate-skeleton motion-reduce:animate-none' : ''}`}
+        style={color ? { backgroundColor: color } : undefined}
+      />
+    </div>
+  )
+}
+
+export function FormatTag({ format }: { format: Format }) {
+  const { t } = useTranslation()
+  const colors = format === 'mp3' ? 'bg-highlight text-text' : 'bg-text text-on-accent'
+  return (
+    <span className={`rounded px-2 py-0.5 font-display text-xs font-semibold ${colors}`}>
+      {t(`format.${format}`)}
+    </span>
+  )
+}

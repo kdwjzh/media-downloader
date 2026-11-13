@@ -18,6 +18,8 @@ Release 說明從這裡取。
 - 開發用指令 `scripts/dev.py`、一鍵檢查 `scripts/check.py`、CI 與 gitleaks 的 pre-commit 檢查。
 - MIT 授權。
 - 設計規範（`design-system/media-downloader/`）：視覺方向「唱片封套」、顏色與字體、各畫面的版面規則與中英文介面文案。
+- 主畫面的靜態樣張：網址列、預覽、佇列與空畫面，使用假資料，可切換各種狀態與語言；按鈕還沒有作用。
+- 介面字體隨 App 附帶（Noto Sans TC、Bricolage Grotesque），MP3 的縮圖顯示成正方形封面。
 
 ### 變更
 

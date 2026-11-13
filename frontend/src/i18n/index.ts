@@ -10,4 +10,10 @@ void i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 })
 
+// Screen readers and CJK glyph selection both depend on <html lang>.
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng
+})
+document.documentElement.lang = i18n.language
+
 export default i18n

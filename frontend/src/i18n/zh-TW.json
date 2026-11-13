@@ -6,5 +6,114 @@
     "connecting": "正在連線到後端…",
     "connected": "後端已連線",
     "failed": "無法連線到後端，請重新啟動程式"
+  },
+  "nav": {
+    "label": "主要導覽",
+    "downloads": "下載",
+    "history": "歷史紀錄",
+    "settings": "設定",
+    "updateAvailable": "有新版"
+  },
+  "format": {
+    "label": "格式",
+    "mp3": "MP3",
+    "mp4": "MP4"
+  },
+  "quality": {
+    "audioLabel": "音質",
+    "videoLabel": "畫質",
+    "kbps": "{{n}} kbps",
+    "exact": "{{n}}p"
+  },
+  "size": {
+    "approx": "約 {{size}}",
+    "unknown": "大小未知"
+  },
+  "action": {
+    "addToQueue": "加入佇列",
+    "cancel": "取消",
+    "retry": "重試",
+    "addAgain": "重新加入",
+    "remove": "從佇列移除",
+    "openFolder": "開啟資料夾",
+    "openLog": "開啟記錄檔"
+  },
+  "url": {
+    "label": "影片或播放列表網址",
+    "placeholder": "https://www.youtube.com/watch?v=…",
+    "lookUp": "查詢"
+  },
+  "preview": {
+    "loading": "正在查詢影片資訊…",
+    "close": "關閉預覽",
+    "note4k": "4K 使用 VP9 編碼，部分播放器可能無法播放。"
+  },
+  "queue": {
+    "title": "佇列（{{count}}）",
+    "clearFinished": "清除已結束的",
+    "emptyInline": "佇列是空的"
+  },
+  "status": {
+    "queued": "等待中",
+    "fetching": "正在查詢影片資訊…",
+    "downloading": "下載中 {{percent}}%",
+    "speed": "{{speed}}/s",
+    "eta": "剩 {{time}}",
+    "retrying": "連線中斷，重試中（第 {{n}} 次）",
+    "converting": "轉檔中",
+    "merging": "合併中",
+    "done": "完成",
+    "failed": "下載失敗：{{title}}。",
+    "cancelled": "已取消"
+  },
+  "empty": {
+    "title": "貼上網址開始下載",
+    "body": "複製 YouTube 影片或播放列表的網址，按 Ctrl+V 貼上。"
+  },
+  "error": {
+    "invalidUrl": {
+      "title": "這不是有效的網址",
+      "hint": "請確認網址是完整的，並以 https:// 開頭。"
+    },
+    "unsupportedSite": {
+      "title": "不支援這個網站",
+      "hint": "目前只支援 YouTube 的影片和播放列表。"
+    },
+    "notFound": {
+      "title": "找不到這支影片",
+      "hint": "影片可能已被移除，請確認網址是否正確。"
+    },
+    "private": {
+      "title": "這是私人影片",
+      "hint": "只有上傳者允許的人看得到，目前無法下載。"
+    },
+    "ageRestricted": {
+      "title": "這支影片有年齡限制",
+      "hint": "目前不支援這類影片，無法下載。"
+    },
+    "membersOnly": {
+      "title": "這是會員限定影片",
+      "hint": "目前不支援這類影片，無法下載。"
+    },
+    "geoBlocked": {
+      "title": "你的地區無法觀看這支影片",
+      "hint": "上傳者限制了可觀看的地區，無法下載。"
+    },
+    "playlistNotFound": {
+      "title": "找不到這個播放列表",
+      "hint": "列表可能是私人的或已被刪除，請確認網址。"
+    },
+    "liveNotSupported": {
+      "title": "目前不支援直播",
+      "hint": "等直播結束、影片上架後再試。"
+    },
+    "network": {
+      "title": "連不上網路",
+      "hint": "請檢查網路連線後重試。"
+    },
+    "unknown": {
+      "title": "下載時發生未預期的問題",
+      "hint": "可以重試；如果還是不行，記錄檔裡有詳細資訊。"
+    }
   }
 }

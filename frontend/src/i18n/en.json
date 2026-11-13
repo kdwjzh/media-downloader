@@ -6,5 +6,114 @@
     "connecting": "Connecting to the backend…",
     "connected": "Backend connected",
     "failed": "Can't reach the backend. Restart the app."
+  },
+  "nav": {
+    "label": "Main navigation",
+    "downloads": "Downloads",
+    "history": "History",
+    "settings": "Settings",
+    "updateAvailable": "Update available"
+  },
+  "format": {
+    "label": "Format",
+    "mp3": "MP3",
+    "mp4": "MP4"
+  },
+  "quality": {
+    "audioLabel": "Audio quality",
+    "videoLabel": "Video quality",
+    "kbps": "{{n}} kbps",
+    "exact": "{{n}}p"
+  },
+  "size": {
+    "approx": "~{{size}}",
+    "unknown": "Size unknown"
+  },
+  "action": {
+    "addToQueue": "Add to queue",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "addAgain": "Add again",
+    "remove": "Remove from queue",
+    "openFolder": "Open folder",
+    "openLog": "Open log file"
+  },
+  "url": {
+    "label": "Video or playlist URL",
+    "placeholder": "https://www.youtube.com/watch?v=…",
+    "lookUp": "Look up"
+  },
+  "preview": {
+    "loading": "Looking up video info…",
+    "close": "Close preview",
+    "note4k": "4K uses VP9, which some players can't play."
+  },
+  "queue": {
+    "title": "Queue ({{count}})",
+    "clearFinished": "Clear finished",
+    "emptyInline": "The queue is empty"
+  },
+  "status": {
+    "queued": "Waiting",
+    "fetching": "Looking up video info…",
+    "downloading": "Downloading {{percent}}%",
+    "speed": "{{speed}}/s",
+    "eta": "{{time}} left",
+    "retrying": "Connection lost, retrying (attempt {{n}})",
+    "converting": "Converting",
+    "merging": "Merging",
+    "done": "Done",
+    "failed": "Download failed: {{title}}.",
+    "cancelled": "Cancelled"
+  },
+  "empty": {
+    "title": "Paste a URL to start downloading",
+    "body": "Copy the URL of a YouTube video or playlist, then press Ctrl+V."
+  },
+  "error": {
+    "invalidUrl": {
+      "title": "This isn't a valid URL",
+      "hint": "Check that the URL is complete and starts with https://."
+    },
+    "unsupportedSite": {
+      "title": "This site isn't supported",
+      "hint": "Only YouTube videos and playlists are supported for now."
+    },
+    "notFound": {
+      "title": "Video not found",
+      "hint": "It may have been removed. Check that the URL is correct."
+    },
+    "private": {
+      "title": "This video is private",
+      "hint": "Only people the uploader allows can see it, so it can't be downloaded."
+    },
+    "ageRestricted": {
+      "title": "This video is age-restricted",
+      "hint": "Videos like this aren't supported yet, so it can't be downloaded."
+    },
+    "membersOnly": {
+      "title": "This video is for members only",
+      "hint": "Videos like this aren't supported yet, so it can't be downloaded."
+    },
+    "geoBlocked": {
+      "title": "This video isn't available in your region",
+      "hint": "The uploader restricted where it can be watched, so it can't be downloaded."
+    },
+    "playlistNotFound": {
+      "title": "Playlist not found",
+      "hint": "It may be private or deleted. Check the URL."
+    },
+    "liveNotSupported": {
+      "title": "Live streams aren't supported",
+      "hint": "Try again after the stream ends and the video is published."
+    },
+    "network": {
+      "title": "Can't connect",
+      "hint": "Check your internet connection, then retry."
+    },
+    "unknown": {
+      "title": "Something unexpected went wrong",
+      "hint": "You can retry. If it keeps failing, the log file has details."
+    }
   }
 }
