@@ -17,6 +17,7 @@ Release 說明從這裡取。
 - 專案骨架：pywebview 視窗載入 React 介面，畫面顯示 App 名稱與後端連線狀態（繁體中文、英文）。
 - 開發用指令 `scripts/dev.py`、一鍵檢查 `scripts/check.py`、CI 與 gitleaks 的 pre-commit 檢查。
 - MIT 授權。
+- 設計規範（`design-system/media-downloader/`）：視覺方向「唱片封套」、顏色與字體、各畫面的版面規則與中英文介面文案。
 
 ### 變更
 

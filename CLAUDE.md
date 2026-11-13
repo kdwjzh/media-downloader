@@ -41,11 +41,14 @@ Claude Code 每次開工會自動讀。
 | 外部程式位置 | 安裝檔採「僅目前使用者」安裝到 `%LOCALAPPDATA%\Programs`，外部程式放在安裝資料夾 | yt-dlp 自我更新需要資料夾可寫入。見 `0005` |
 | 介面狀態 | Zustand | 輕量，佇列狀態集中管理 |
 | 介面語言 | 繁體中文、英文，react-i18next，預設跟隨系統 | 給別人用 |
+| 視覺方向 | 「唱片封套」：梅紫主色，MP3 縮圖正方形、MP4 維持 16:9；規範在 `design-system/media-downloader/` | 特色來自「抓音樂」這個用途。見 `0006` |
+| 字體與圖示 | Noto Sans TC、Bricolage Grotesque 隨 App 附帶（npm 套件），圖示用 Phosphor；不從網路載入 | 每台電腦看起來一樣，離線可用。見 `0006` |
+| 視窗 | 預設 960x680，最小 720x520，左側導覽 | 清單型畫面高度比寬度珍貴。見 `0006` |
 | 儲存 | 設定用 JSON、歷史紀錄用 SQLite，放 `%APPDATA%` | SQLite 是 Python 內建，之後好做搜尋 |
 | 測試 | 後端 pytest、介面 Vitest | |
 | 打包／發佈 | PyInstaller（資料夾模式）+ 安裝檔；推 tag 時由 GitHub Actions 打包上傳 Releases | 使用者不需安裝 Python |
 | 實作順序 | 骨架 → 技術驗證 → UI 設計 → 後端 → 介面 → 打包 | UI 設計時要有真實資料當依據。見 `0004` |
-| 授權 | MIT；附帶的 yt-dlp、FFmpeg、Deno 維持各自的授權，README 與關於頁要列出 | 個人工具，最簡單寬鬆 |
+| 授權 | MIT；附帶的 yt-dlp、FFmpeg、Deno 與兩個字體（OFL 1.1）維持各自的授權，README 與關於頁要列出 | 個人工具，最簡單寬鬆 |
 | 公開 | 開發期間不公開，完成後公開；公開前文件改成英文 | |
 
 套件版本在動手時查當下的穩定版，不憑記憶寫。
@@ -170,6 +173,14 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 1. 先讀 MASTER.md；有對應的 `pages/<畫面>.md` 就以它為準。
 2. 用 ui-ux-pro-max 查規則：`--stack react`、`--domain web`、`--domain ux`。
 3. 不要自行重新產生 design system 或用 `--force` 覆寫 MASTER.md，要改先問。
+
+實作時的規則（依據見 `MASTER.md`，階段 2 檢查樣張時定的）：
+
+- 顏色只用 `frontend/src/index.css` 的語意變數，元件裡不寫色碼。新的文字與背景組合先算對比，加進 MASTER 的對比表。
+- 芥末黃只當 MP3 標籤的底色；分隔線色不當控制項邊框。兩個的對比都不夠。
+- 佇列的列高固定（72），任何狀態都不能改變列高；預覽區塊同理（172）。
+- 清單裡重複出現的按鈕，`aria-label` 要帶項目標題。
+- `frontend/src/mock/` 是階段 2 樣張的假資料，階段 4 接上後端時整個刪掉；元件不可以從它匯入型別（型別在 `frontend/src/types.ts`）。
 
 視覺決策：
 
