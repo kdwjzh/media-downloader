@@ -14,7 +14,13 @@ def main() -> None:
     if not dev and not DIST_INDEX.is_file():
         sys.exit("frontend/dist not found: run `npm run build` in frontend/, or start with --dev")
     webview.create_window(
-        "Media Downloader", DEV_URL if dev else str(DIST_INDEX), js_api=BridgeApi()
+        "Media Downloader",
+        DEV_URL if dev else str(DIST_INDEX),
+        js_api=BridgeApi(),
+        # Sizes come from design-system/media-downloader/MASTER.md section 5.
+        width=960,
+        height=680,
+        min_size=(720, 520),
     )
     webview.start(debug=dev)
 
