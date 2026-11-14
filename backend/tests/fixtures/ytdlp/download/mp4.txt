@@ -1,0 +1,61 @@
+[youtube] Extracting URL: https://www.youtube.com/watch?v=FtSUD4KDscE
+[youtube] FtSUD4KDscE: Downloading webpage
+[youtube] FtSUD4KDscE: Downloading tv samsung player API JSON
+[youtube] FtSUD4KDscE: Downloading visionos player API JSON
+[youtube] FtSUD4KDscE: Downloading player fad7e4e9-main
+[youtube] [jsc:deno] Solving JS challenges using deno
+[youtube] FtSUD4KDscE: Downloading m3u8 information
+[info] FtSUD4KDscE: Downloading 1 format(s): 137+140
+MD-NAME <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.mp4
+MD-SIZES [{"format_id": "137", "filesize": 19428926, "filesize_approx": 19428922}, {"format_id": "140", "filesize": 682151, "filesize_approx": 682150}] {"format_id": "137+140", "filesize_approx": 20111077}
+[download] Sleeping 5.00 seconds as required by the site...
+[download] Destination: <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.f137.mp4
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 1024, "total_bytes": 19428926}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 3072, "total_bytes": 19428926, "speed": 2598286.3254688447}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 7168, "total_bytes": 19428926, "speed": 4156611.5127886077}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 15360, "total_bytes": 19428926, "speed": 6996580.086880973}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 31744, "total_bytes": 19428926, "speed": 5638110.784501377}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 64512, "total_bytes": 19428926, "speed": 6822393.274198835}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 130048, "total_bytes": 19428926, "speed": 11147551.584721342}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 261120, "total_bytes": 19428926, "speed": 16438523.984690432}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 523264, "total_bytes": 19428926, "speed": 23349663.683384046}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 1047552, "total_bytes": 19428926, "speed": 32221703.900029335}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 2096128, "total_bytes": 19428926, "speed": 44290504.70225639}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 4193280, "total_bytes": 19428926, "speed": 33602127.32725022}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 8387584, "total_bytes": 19428926, "speed": 28479435.530030437}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10254468, "total_bytes": 19428926, "speed": 13879824.546488153}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10255492, "total_bytes": 19428926}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10257540, "total_bytes": 19428926}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10261636, "total_bytes": 19428926, "speed": 6340103.557992408}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10269828, "total_bytes": 19428926, "speed": 9488145.72017673}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10286212, "total_bytes": 19428926, "speed": 16101582.558471398}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10318980, "total_bytes": 19428926, "speed": 27675456.64805155}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10384516, "total_bytes": 19428926, "speed": 41279010.63962464}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10515588, "total_bytes": 19428926, "speed": 67802678.16999938}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 10777732, "total_bytes": 19428926, "speed": 24473157.46446771}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 11302020, "total_bytes": 19428926, "speed": 45358132.13659826}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 12350596, "total_bytes": 19428926, "speed": 56421334.678303726}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 14447748, "total_bytes": 19428926, "speed": 13989275.784929063}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 18642052, "total_bytes": 19428926, "speed": 15754180.29922846}
+MD-DL {"format_id": "137"} {"status": "downloading", "downloaded_bytes": 19428926, "total_bytes": 19428926, "speed": 10724818.34145591}
+MD-DL {"format_id": "137"} {"status": "finished", "downloaded_bytes": 19428926, "total_bytes": 19428926, "speed": 11387398.785715602}
+[download] Destination: <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.f140.m4a
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 1024, "total_bytes": 682151}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 3072, "total_bytes": 682151, "speed": 2661619.89010535}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 7168, "total_bytes": 682151, "speed": 4701293.365441752}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 15360, "total_bytes": 682151, "speed": 8449115.992131148}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 31744, "total_bytes": 682151, "speed": 14929803.338865217}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 64512, "total_bytes": 682151, "speed": 26075256.784041632}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 130048, "total_bytes": 682151, "speed": 44871737.95590655}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 261120, "total_bytes": 682151, "speed": 56173599.039852284}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 523264, "total_bytes": 682151, "speed": 68267388.97807086}
+MD-DL {"format_id": "140"} {"status": "downloading", "downloaded_bytes": 682151, "total_bytes": 682151, "speed": 64324385.51942446}
+MD-DL {"format_id": "140"} {"status": "finished", "downloaded_bytes": 682151, "total_bytes": 682151, "speed": 10037991.060316036}
+MD-PP {"status": "started", "postprocessor": "Merger"}
+[Merger] Merging formats into "<TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.mp4"
+MD-PP {"status": "finished", "postprocessor": "Merger"}
+Deleting original file <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.f137.mp4 (pass -k to keep)
+Deleting original file <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.f140.m4a (pass -k to keep)
+MD-PP {"status": "started", "postprocessor": "MoveFiles"}
+MD-PP {"status": "finished", "postprocessor": "MoveFiles"}
+MD-FILE <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.mp4

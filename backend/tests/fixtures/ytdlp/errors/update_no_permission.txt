@@ -1,0 +1,1 @@
+ERROR: Insufficient permissions to write to <TEMP>\update-locked\yt-dlp.exe.new

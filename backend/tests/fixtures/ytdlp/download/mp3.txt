@@ -1,0 +1,38 @@
+[youtube] Extracting URL: https://www.youtube.com/watch?v=FtSUD4KDscE
+[youtube] FtSUD4KDscE: Downloading webpage
+[youtube] FtSUD4KDscE: Downloading tv samsung player API JSON
+[youtube] FtSUD4KDscE: Downloading visionos player API JSON
+[youtube] FtSUD4KDscE: Downloading player fad7e4e9-main
+[youtube] [jsc:deno] Solving JS challenges using deno
+[youtube] FtSUD4KDscE: Downloading m3u8 information
+[info] FtSUD4KDscE: Downloading 1 format(s): 251
+[info] Downloading video thumbnail 45 ...
+[info] Writing video thumbnail 45 to: <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.webp
+MD-NAME <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.webm
+MD-SIZES [] {"format_id": "251", "filesize": 509908, "filesize_approx": 509905}
+MD-PP {"status": "started", "postprocessor": "ThumbnailsConvertor"}
+[ThumbnailsConvertor] Converting thumbnail "<TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.webp" to jpg
+MD-PP {"status": "finished", "postprocessor": "ThumbnailsConvertor"}
+Deleting original file <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.webp (pass -k to keep)
+[download] Sleeping 5.00 seconds as required by the site...
+[download] Destination: <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.webm
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 1024, "total_bytes": 509908}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 3072, "total_bytes": 509908, "speed": 2172100.790289953}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 7168, "total_bytes": 509908, "speed": 3946543.852979785}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 15360, "total_bytes": 509908, "speed": 7272210.118523535}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 31744, "total_bytes": 509908, "speed": 4551775.535058631}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 64512, "total_bytes": 509908, "speed": 5696482.939957894}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 130048, "total_bytes": 509908, "speed": 8368402.5497000655}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 261120, "total_bytes": 509908, "speed": 12061591.820444483}
+MD-DL {"format_id": "251"} {"status": "downloading", "downloaded_bytes": 509908, "total_bytes": 509908, "speed": 19087096.51077198}
+MD-DL {"format_id": "251"} {"status": "finished", "downloaded_bytes": 509908, "total_bytes": 509908, "speed": 6070445.947609384}
+MD-PP {"status": "started", "postprocessor": "ExtractAudio"}
+[ExtractAudio] Destination: <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.mp3
+MD-PP {"status": "finished", "postprocessor": "ExtractAudio"}
+Deleting original file <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.webm (pass -k to keep)
+MD-PP {"status": "started", "postprocessor": "EmbedThumbnail"}
+[EmbedThumbnail] ffmpeg: Adding thumbnail to "<TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.mp3"
+MD-PP {"status": "finished", "postprocessor": "EmbedThumbnail"}
+MD-PP {"status": "started", "postprocessor": "MoveFiles"}
+MD-PP {"status": "finished", "postprocessor": "MoveFiles"}
+MD-FILE <TEMP>\media-downloader-spike\record\task\公視新創電影《最後的詩句》30秒搶先看！.mp3

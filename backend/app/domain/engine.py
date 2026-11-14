@@ -1,9 +1,18 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Protocol
 
 from app.domain.errors import ErrorCode
 from app.domain.media import Format, MediaInfo, PlaylistInfo
+
+
+class OnDuplicate(StrEnum):
+    """What to do when the download folder already has a file with the same name."""
+
+    SKIP = "skip"
+    OVERWRITE = "overwrite"
+    RENAME = "rename"
 
 
 @dataclass(frozen=True)
@@ -13,6 +22,7 @@ class DownloadRequest:
     format: Format
     quality: int
     dest_dir: str
+    on_duplicate: OnDuplicate = OnDuplicate.RENAME
 
 
 @dataclass(frozen=True)
@@ -48,6 +58,7 @@ EngineEvent = FileSizes | FileProgress | ConnectionLost | PostProcessing
 class DownloadResult:
     file_path: str
     size_bytes: int
+    skipped: bool = False  # True: nothing was downloaded; file_path is the file that was there
 
 
 class EngineError(Exception):

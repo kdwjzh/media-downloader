@@ -1,0 +1,25 @@
+[youtube] Extracting URL: https://www.youtube.com/watch?v=jNQXAC9IVRw
+[youtube] jNQXAC9IVRw: Downloading webpage
+[youtube] jNQXAC9IVRw: Downloading tv samsung player API JSON
+[youtube] jNQXAC9IVRw: Downloading visionos player API JSON
+[youtube] jNQXAC9IVRw: Downloading player fad7e4e9-main
+[youtube] [jsc:deno] Solving JS challenges using deno
+[youtube] jNQXAC9IVRw: Downloading m3u8 information
+[info] jNQXAC9IVRw: Downloading 1 format(s): 18
+MD-NAME <TEMP>\media-downloader-spike\record\task\Me at the zoo.mp4
+MD-SIZES [] {"format_id": "18", "filesize_approx": 635110}
+[download] Destination: <TEMP>\media-downloader-spike\record\task\Me at the zoo.mp4
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 1024, "total_bytes": 629172}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 3072, "total_bytes": 629172, "speed": 2823778.629848784}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 7168, "total_bytes": 629172, "speed": 4446793.5323177045}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 15360, "total_bytes": 629172, "speed": 2323110.826482042}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 31744, "total_bytes": 629172, "speed": 4181395.2068337416}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 64512, "total_bytes": 629172, "speed": 6031181.786019972}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 130048, "total_bytes": 629172, "speed": 9094651.970654929}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 261120, "total_bytes": 629172, "speed": 14316744.800324187}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 523264, "total_bytes": 629172, "speed": 22107117.34093496}
+MD-DL {"format_id": "18"} {"status": "downloading", "downloaded_bytes": 629172, "total_bytes": 629172, "speed": 24388098.96205386}
+MD-DL {"format_id": "18"} {"status": "finished", "downloaded_bytes": 629172, "total_bytes": 629172, "speed": 5083445.643599602}
+MD-PP {"status": "started", "postprocessor": "MoveFiles"}
+MD-PP {"status": "finished", "postprocessor": "MoveFiles"}
+MD-FILE <TEMP>\media-downloader-spike\record\task\Me at the zoo.mp4
