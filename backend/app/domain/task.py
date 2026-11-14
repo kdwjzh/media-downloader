@@ -123,9 +123,10 @@ class DownloadTask:
         self.size_bytes = size_bytes
 
     def skip(self) -> None:
-        """The file already exists and the user chose to skip duplicates. The name is only
-        known once the download has started, so a queued task cannot be skipped."""
-        self._move(_S.DONE, only_from={_S.DOWNLOADING})
+        """The file already exists and the user chose to skip duplicates. Usually noticed as
+        the download starts; after converting or merging when the file appeared meanwhile
+        (the same video queued twice)."""
+        self._move(_S.DONE)
         self.skipped = True
 
     def fail(self, error: ErrorCode) -> None:
