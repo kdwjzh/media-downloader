@@ -1,4 +1,5 @@
-// Shapes the UI renders. Stage 4 fills them from the bridge instead of src/mock.
+// Shapes the UI renders, as agreed in docs/介面與後端的約定.md.
+// Stage 4 fills them from the bridge instead of src/mock.
 
 export type Format = 'mp3' | 'mp4'
 
@@ -21,13 +22,22 @@ export type ErrorCode =
 // Only these get a Retry button; retrying the others cannot succeed.
 export const RETRYABLE: ReadonlySet<ErrorCode> = new Set(['network', 'unknown'])
 
+/** One selectable format and quality. MP3: kbps. MP4: height, short side for vertical videos. */
+export interface FormatOption {
+  format: Format
+  quality: number
+  /** Estimated by the backend; absent when the source gives no size. */
+  sizeBytes?: number
+}
+
 export interface MediaInfo {
   url: string
   title: string
   channel?: string
   durationSec: number
-  /** Heights this video really has, short side for vertical videos. */
-  heights: number[]
+  platform: string
+  /** Everything this video offers: the three MP3 bitrates and the heights it really has. */
+  options: FormatOption[]
   thumb?: string
 }
 
@@ -53,6 +63,7 @@ export interface QueueItem {
   title?: string
   thumb?: string
   format: Format
+  quality: number
   status: TaskStatus
   percent?: number
   doneBytes?: number
@@ -61,5 +72,7 @@ export interface QueueItem {
   etaSec?: number
   attempt?: number
   sizeBytes?: number
+  /** Done without downloading: the file already existed and duplicates are skipped. */
+  skipped?: boolean
   error?: ErrorCode
 }

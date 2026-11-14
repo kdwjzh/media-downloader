@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ping } from './api/bridge'
 import { NavRail } from './components/NavRail'
 import { StateSwitcher } from './mock/StateSwitcher'
-import { type PreviewKey, type QueueKey, estimateSize, previews, queues } from './mock/sample'
+import { type PreviewKey, type QueueKey, previews, queues } from './mock/sample'
 import { MainPage } from './pages/MainPage'
 
 type Status = 'connecting' | 'connected' | 'failed'
@@ -33,7 +33,6 @@ export default function App() {
           preview={previews[preview]}
           queue={queues[queue]}
           defaults={{ format: 'mp3', bitrate: 320, height: 1080 }}
-          estimateSize={estimateSize}
         />
       </div>
     </div>

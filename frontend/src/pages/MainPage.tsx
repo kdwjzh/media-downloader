@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../components/Button'
 import { PreviewPanel } from '../components/PreviewPanel'
 import { QueueRow } from '../components/QueueRow'
-import type { Format, MediaInfo, Preview, QueueItem } from '../types'
+import type { Format, Preview, QueueItem } from '../types'
 
 const FINISHED: ReadonlySet<QueueItem['status']> = new Set(['done', 'failed', 'cancelled'])
 
@@ -11,7 +11,6 @@ interface Props {
   preview: Preview | null
   queue: QueueItem[]
   defaults: { format: Format; bitrate: number; height: number }
-  estimateSize: (info: MediaInfo, format: Format, quality: number) => number | null
 }
 
 function EmptyState() {
@@ -30,7 +29,7 @@ function EmptyState() {
   )
 }
 
-export function MainPage({ preview, queue, defaults, estimateSize }: Props) {
+export function MainPage({ preview, queue, defaults }: Props) {
   const { t } = useTranslation()
   const urlId = useId()
   const [url, setUrl] = useState('')
@@ -59,7 +58,7 @@ export function MainPage({ preview, queue, defaults, estimateSize }: Props) {
         </div>
       </form>
 
-      {preview && <PreviewPanel preview={preview} defaults={defaults} estimateSize={estimateSize} />}
+      {preview && <PreviewPanel preview={preview} defaults={defaults} />}
 
       {queue.length === 0 && !preview ? (
         <EmptyState />

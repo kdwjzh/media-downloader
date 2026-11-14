@@ -2,7 +2,7 @@ import { Warning, X } from '@phosphor-icons/react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatBytes, formatDuration } from '../format'
-import { type Format, MP3_BITRATES, type MediaInfo, type Preview, RETRYABLE } from '../types'
+import { type Format, type MediaInfo, type Preview, RETRYABLE } from '../types'
 import { Button } from './Button'
 import { Thumb } from './Thumb'
 
@@ -12,21 +12,21 @@ interface Props {
   preview: Preview
   /** Remembered from the last download. */
   defaults: { format: Format; bitrate: number; height: number }
-  estimateSize: (info: MediaInfo, format: Format, quality: number) => number | null
 }
 
-function Ready({ info, defaults, estimateSize }: Omit<Props, 'preview'> & { info: MediaInfo }) {
+function Ready({ info, defaults }: Omit<Props, 'preview'> & { info: MediaInfo }) {
   const { t } = useTranslation()
   const id = useId()
   const [format, setFormat] = useState(defaults.format)
   const [bitrate, setBitrate] = useState(defaults.bitrate)
-  // The saved height is a ceiling: fall back to the best this video has.
-  const [height, setHeight] = useState(Math.max(...info.heights.filter((h) => h <= defaults.height), info.heights[0]))
+  const qualities = (f: Format) => info.options.filter((o) => o.format === f).map((o) => o.quality)
+  const heights = qualities('mp4').sort((a, b) => b - a)
+  // The saved height is a ceiling: fall back to the best this video has under it.
+  const [height, setHeight] = useState(heights.find((h) => h <= defaults.height) ?? heights.at(-1) ?? 0)
 
   const isAudio = format === 'mp3'
   const quality = isAudio ? bitrate : height
-  const size = estimateSize(info, format, quality)
-  const heights = [...info.heights].sort((a, b) => b - a)
+  const size = info.options.find((o) => o.format === format && o.quality === quality)?.sizeBytes
 
   return (
     <>
@@ -76,7 +76,7 @@ function Ready({ info, defaults, estimateSize }: Omit<Props, 'preview'> & { info
               onChange={(e) => (isAudio ? setBitrate : setHeight)(Number(e.target.value))}
             >
               {isAudio
-                ? MP3_BITRATES.map((n) => (
+                ? qualities('mp3').map((n) => (
                     <option key={n} value={n}>
                       {t('quality.kbps', { n })}
                     </option>
@@ -94,7 +94,7 @@ function Ready({ info, defaults, estimateSize }: Omit<Props, 'preview'> & { info
         </div>
         {/* Fixed-height line: the 4K note appears here without resizing the panel. */}
         <p className="mt-1 flex h-4 gap-3 overflow-hidden text-xs whitespace-nowrap text-text-muted tabular-nums">
-          <span>{size === null ? t('size.unknown') : t('size.approx', { size: formatBytes(size) })}</span>
+          <span>{size === undefined ? t('size.unknown') : t('size.approx', { size: formatBytes(size) })}</span>
           {!isAudio && height === 2160 && <span className="truncate" title={t('preview.note4k')}>{t('preview.note4k')}</span>}
         </p>
       </div>
@@ -102,7 +102,7 @@ function Ready({ info, defaults, estimateSize }: Omit<Props, 'preview'> & { info
   )
 }
 
-export function PreviewPanel({ preview, defaults, estimateSize }: Props) {
+export function PreviewPanel({ preview, defaults }: Props) {
   const { t } = useTranslation()
   const isError = preview.kind === 'error'
   return (
@@ -126,7 +126,7 @@ export function PreviewPanel({ preview, defaults, estimateSize }: Props) {
       )}
       {preview.kind === 'ready' && (
         // Remount per video so the remembered choices are applied afresh.
-        <Ready key={preview.info.url} info={preview.info} defaults={defaults} estimateSize={estimateSize} />
+        <Ready key={preview.info.url} info={preview.info} defaults={defaults} />
       )}
       {preview.kind === 'error' && (
         <div role="alert" className="flex min-w-0 flex-1 gap-3">
