@@ -107,6 +107,10 @@
       "title": "Live streams aren't supported",
       "hint": "Try again after the stream ends and the video is published."
     },
+    "playlistUrl": {
+      "title": "This is a playlist URL",
+      "hint": "Paste it again and wait for the list, then pick what to download."
+    },
     "network": {
       "title": "Can't connect",
       "hint": "Check your internet connection, then retry."

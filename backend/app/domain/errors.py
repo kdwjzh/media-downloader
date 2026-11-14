@@ -13,6 +13,8 @@ class ErrorCode(StrEnum):
     GEO_BLOCKED = "geoBlocked"
     PLAYLIST_NOT_FOUND = "playlistNotFound"
     LIVE_NOT_SUPPORTED = "liveNotSupported"
+    # Only for a queue item added by URL alone that turned out to be a playlist.
+    PLAYLIST_URL = "playlistUrl"
     NETWORK = "network"
     UNKNOWN = "unknown"
 

@@ -16,6 +16,7 @@ export type ErrorCode =
   | 'geoBlocked'
   | 'playlistNotFound'
   | 'liveNotSupported'
+  | 'playlistUrl'
   | 'network'
   | 'unknown'
 

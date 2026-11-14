@@ -248,10 +248,11 @@
 | `geoBlocked` | 你的地區無法觀看這支影片／上傳者限制了可觀看的地區，無法下載。 | This video isn't available in your region／The uploader restricted where it can be watched, so it can't be downloaded. | 無 |
 | `playlistNotFound` | 找不到這個播放列表／列表可能是私人的或已被刪除，請確認網址。 | Playlist not found／It may be private or deleted. Check the URL. | 無 |
 | `liveNotSupported` | 目前不支援直播／等直播結束、影片上架後再試。 | Live streams aren't supported／Try again after the stream ends and the video is published. | 無 |
+| `playlistUrl` | 這是播放列表的網址／請重新貼上這個網址，等清單出現後再勾選要下載的項目。 | This is a playlist URL／Paste it again and wait for the list, then pick what to download. | 無 |
 | `network` | 連不上網路／請檢查網路連線後重試。 | Can't connect／Check your internet connection, then retry. | 有 |
 | `unknown` | 下載時發生未預期的問題／可以重試；如果還是不行，記錄檔裡有詳細資訊。 | Something unexpected went wrong／You can retry. If it keeps failing, the log file has details. | 有，另有「開啟記錄檔」 |
 
-`ageRestricted` 與 `membersOnly` 的說法刻意不提登入（第一版沒有這個功能）。`liveNotSupported` 是設計時加的。後端的 `ErrorCode`（`backend/app/domain/errors.py`）用的就是這 11 個鍵名，改的時候兩邊一起改。
+`ageRestricted` 與 `membersOnly` 的說法刻意不提登入（第一版沒有這個功能）。`liveNotSupported` 是設計時加的。`playlistUrl` 是階段 3c 加的，只會出現在佇列：預覽還沒查完就被自動加入的網址，查出來是播放列表。後端的 `ErrorCode`（`backend/app/domain/errors.py`）用的就是這 12 個鍵名，改的時候兩邊一起改。
 
 ## 9. 交付前檢查
 
