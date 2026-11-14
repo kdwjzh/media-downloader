@@ -251,7 +251,7 @@
 | `network` | 連不上網路／請檢查網路連線後重試。 | Can't connect／Check your internet connection, then retry. | 有 |
 | `unknown` | 下載時發生未預期的問題／可以重試；如果還是不行，記錄檔裡有詳細資訊。 | Something unexpected went wrong／You can retry. If it keeps failing, the log file has details. | 有，另有「開啟記錄檔」 |
 
-`ageRestricted` 與 `membersOnly` 的說法刻意不提登入（第一版沒有這個功能）。`liveNotSupported` 是設計時加的；後端的 `ErrorCode` 階段 3 才定，到時候鍵名要對齊。
+`ageRestricted` 與 `membersOnly` 的說法刻意不提登入（第一版沒有這個功能）。`liveNotSupported` 是設計時加的。後端的 `ErrorCode`（`backend/app/domain/errors.py`）用的就是這 11 個鍵名，改的時候兩邊一起改。
 
 ## 9. 交付前檢查
 

@@ -76,7 +76,7 @@ Claude Code 每次開工會自動讀。
 
 ## 4. 架構
 
-細節見 `docs/架構.md`。
+細節見 `docs/架構.md`。介面與後端來往的指令、事件、資料形狀以 `docs/介面與後端的約定.md` 為準。
 
 ```
 介面 frontend/  →  橋接 bridge/  →  服務 services/  →  領域 domain/  ←  基礎設施 infrastructure/
@@ -113,6 +113,11 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 7. 外部程式的路徑只能從 `infrastructure/binaries/` 取得。
 8. 下載任務的狀態只能由 `DownloadTask` 的狀態機改變。
 9. 後端回傳錯誤代碼（`ErrorCode`），不回傳給人看的文字；文字放在介面的語言檔。
+10. 引擎不直接碰 `DownloadTask`：它回報事件，由服務層套用到任務上。
+11. 成品路徑不交給介面；介面用任務編號或歷史紀錄編號叫後端開啟資料夾。
+
+介面與後端各有一份的常數（格式、音質、畫質、九種狀態、11 個錯誤代碼、可以重試的錯誤）在 `backend/app/domain/` 與 `frontend/src/types.ts`，要一起改。
+狀態轉換表有三處要一致：`domain/task.py` 的 `TRANSITIONS`、約定第 6 節、`架構.md` 的狀態圖。
 
 新增檔案前先說明它屬於哪一層。需求看起來要打破上述規則時，停下來問。
 
