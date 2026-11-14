@@ -144,4 +144,5 @@ def test_engine_offers_the_domain_interface_and_refuses_bad_urls_before_starting
             engine.download(DownloadRequest("t1", url, Format.MP3, 128, "Z:\nowhere"), print)
         assert error.value.code is code
     engine.cancel("no-such-task")  # ignored
-    YtDlpEngine().stop_all()
+    engine.stop_all()
+    engine.remove_stale_temp("Z:\\nowhere")  # a missing folder is ignored

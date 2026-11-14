@@ -90,6 +90,15 @@ class MediaEngine(Protocol):
         """Stops that task's download and removes its temporary files. Unknown ids are ignored."""
         ...
 
+    def stop_all(self) -> None:
+        """For closing the app: cancels every running download."""
+        ...
+
+    def remove_stale_temp(self, dest_dir: str) -> None:
+        """For starting the app: deletes temporary files a run that ended abnormally left in
+        dest_dir. Only call while nothing is downloading into it."""
+        ...
+
     def version(self) -> str: ...
 
     def update(self) -> bool:
