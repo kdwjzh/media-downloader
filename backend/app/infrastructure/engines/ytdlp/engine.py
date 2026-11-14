@@ -45,6 +45,16 @@ class YtDlpEngine:
         self, request: DownloadRequest, on_event: Callable[[EngineEvent], None]
     ) -> DownloadResult:
         urls.check(request.url)
+        try:
+            return self._download(request, on_event)
+        except OSError as error:
+            # The download folder is gone or read-only, the file to overwrite is open in
+            # another program, the disk is full. The message holds a path: log file only.
+            raise EngineError(ErrorCode.UNKNOWN, f"{type(error).__name__}: {error}") from error
+
+    def _download(
+        self, request: DownloadRequest, on_event: Callable[[EngineEvent], None]
+    ) -> DownloadResult:
         task_dir = files.create_task_dir(request.dest_dir, request.task_id)
         process: JobProcess | None = None
         try:
