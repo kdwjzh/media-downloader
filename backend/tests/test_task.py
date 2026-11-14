@@ -58,7 +58,7 @@ LEGAL: dict[str, dict[TaskStatus, TaskStatus]] = {
     "connection_lost": {S.DOWNLOADING: S.RETRYING, S.RETRYING: S.RETRYING},
     "begin_post_processing": {S.DOWNLOADING: S.CONVERTING},
     "complete": {S.DOWNLOADING: S.DONE, S.CONVERTING: S.DONE, S.MERGING: S.DONE},
-    "skip": {S.QUEUED: S.DONE, S.DOWNLOADING: S.DONE},
+    "skip": {S.DOWNLOADING: S.DONE},
     "fail": {s: S.FAILED for s in (S.FETCHING, S.DOWNLOADING, S.RETRYING, S.CONVERTING, S.MERGING)},
     "cancel": {
         s: S.CANCELLED
@@ -135,7 +135,7 @@ def test_errors_that_cannot_succeed_are_not_retried(error: ErrorCode) -> None:
 
 
 def test_skip_is_done_with_a_flag_and_no_size() -> None:
-    task = make(S.QUEUED)
+    task = make(S.DOWNLOADING)
     task.skip()
     assert (task.status, task.skipped, task.size_bytes) == (S.DONE, True, None)
 

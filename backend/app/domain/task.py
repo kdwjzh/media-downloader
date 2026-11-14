@@ -24,7 +24,7 @@ _S = TaskStatus
 # Every legal status change. Documented in docs/介面與後端的約定.md section 6.
 TRANSITIONS: dict[TaskStatus, frozenset[TaskStatus]] = {
     _S.FETCHING: frozenset({_S.QUEUED, _S.FAILED, _S.CANCELLED}),
-    _S.QUEUED: frozenset({_S.DOWNLOADING, _S.DONE, _S.CANCELLED}),
+    _S.QUEUED: frozenset({_S.DOWNLOADING, _S.CANCELLED}),
     _S.DOWNLOADING: frozenset(
         {_S.RETRYING, _S.CONVERTING, _S.MERGING, _S.DONE, _S.FAILED, _S.CANCELLED}
     ),
@@ -119,13 +119,13 @@ class DownloadTask:
         self._move(to)
 
     def complete(self, size_bytes: int) -> None:
-        # A queued task has downloaded nothing; it can only reach done through skip().
-        self._move(_S.DONE, only_from={_S.DOWNLOADING, _S.CONVERTING, _S.MERGING})
+        self._move(_S.DONE)
         self.size_bytes = size_bytes
 
     def skip(self) -> None:
-        """The file already exists and the user chose to skip duplicates."""
-        self._move(_S.DONE, only_from={_S.QUEUED, _S.DOWNLOADING})
+        """The file already exists and the user chose to skip duplicates. The name is only
+        known once the download has started, so a queued task cannot be skipped."""
+        self._move(_S.DONE, only_from={_S.DOWNLOADING})
         self.skipped = True
 
     def fail(self, error: ErrorCode) -> None:
