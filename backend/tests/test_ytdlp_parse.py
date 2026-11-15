@@ -174,6 +174,8 @@ ERRORS = {
     "not_found": ErrorCode.NOT_FOUND,
     "removed": ErrorCode.NOT_FOUND,
     "live_recording_gone": ErrorCode.NOT_FOUND,
+    # A stream that has not started yet (2026-11-15): yt-dlp fails instead of answering.
+    "live_upcoming": ErrorCode.LIVE_NOT_SUPPORTED,
     "private": ErrorCode.PRIVATE,
     "age_restricted": ErrorCode.AGE_RESTRICTED,
     "geo_blocked": ErrorCode.GEO_BLOCKED,

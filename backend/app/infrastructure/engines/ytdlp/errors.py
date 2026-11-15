@@ -19,6 +19,8 @@ RULES: tuple[tuple[str, ErrorCode], ...] = (
     ("Video unavailable", ErrorCode.NOT_FOUND),
     ("has been removed", ErrorCode.NOT_FOUND),
     ("This live stream recording is not available", ErrorCode.NOT_FOUND),
+    # A stream that has not started: yt-dlp fails here instead of reporting is_upcoming.
+    ("This live event will begin in", ErrorCode.LIVE_NOT_SUPPORTED),
     ("is not a valid URL", ErrorCode.INVALID_URL),
     ("Invalid URL", ErrorCode.INVALID_URL),
     ("Unsupported URL", ErrorCode.UNSUPPORTED_SITE),
