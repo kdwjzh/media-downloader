@@ -149,6 +149,7 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 
 - 每個 bug 先寫會失敗的測試重現，這個測試永久保留。
 - 完成前一定要跑過一鍵檢查腳本 `scripts/check.py`。
+- 依賴方向由 `backend/tests/test_layering.py` 檢查；它擋下來時改程式，不要改測試裡的清單（除非規則本身改了）。
 - `domain/` 與 `services/` 的邏輯要有 pytest 測試；測試不連網路，yt-dlp 的輸出用錄下來的樣本。
 
 - 牽涉執行緒的測試不用 `sleep`、不假設哪條執行緒先跑：用 `tests/fake_engine.py`（每一步由測試推進）和傳入的假時鐘。新的佇列測試寫完要重複跑幾十次確認不會偶爾失敗。
@@ -199,6 +200,7 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
   - 失敗的結束代碼一律是 1，錯誤分類靠 `ERROR:` 之後的文字；`ERROR:` 那一行可能是空的，內容在下一行，所以要看整段。比對規則只放在 `errors.py`。比對不到的歸為未知錯誤，原文寫進記錄檔。
   - 重試那一行括號裡的次數會重新從 1 算，第幾次重試由引擎自己數。
   - MP3 的封面轉檔發生在下載之前；「開始轉檔」只認下載開始之後的後處理。
+  - 即將直播的影片是直接失敗（`This live event will begin in …`），不是回 `live_status=is_upcoming`；兩條路都要歸成 `liveNotSupported`。
   - `--ppa` 的值會被 yt-dlp 像 shell 一樣拆開：FFmpeg 濾鏡裡有逗號時，外面要雙引號、裡面要單引號。
   - 傳給 yt-dlp 的網址要先過 `urls.check`（http/https、YouTube 的網域清單），並放在 `--` 之後。
   - 畫質用 `-S res:N,vcodec:h264,acodec:m4a` 加 `--merge-output-format mp4`，不用 `height<=N`（直式影片會選錯）。4K 沒有 H.264，會是 VP9 裝在 mp4 裡，不重新編碼。
