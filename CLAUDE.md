@@ -44,7 +44,8 @@ Claude Code 每次開工會自動讀。
 | 視覺方向 | 「唱片封套」：梅紫主色，MP3 縮圖正方形、MP4 維持 16:9；規範在 `design-system/media-downloader/` | 特色來自「抓音樂」這個用途。見 `0006` |
 | 字體與圖示 | Noto Sans TC、Bricolage Grotesque 隨 App 附帶（npm 套件），圖示用 Phosphor；不從網路載入 | 每台電腦看起來一樣，離線可用。見 `0006` |
 | 視窗 | 預設 960x680，最小 720x520，左側導覽 | 清單型畫面高度比寬度珍貴。見 `0006` |
-| 儲存 | 設定用 JSON、歷史紀錄用 SQLite，放 `%APPDATA%` | SQLite 是 Python 內建，之後好做搜尋 |
+| 儲存 | 設定用 JSON、歷史紀錄用 SQLite（縮圖也存在裡面），放 `%APPDATA%`；記錄檔與新版檢查的結果放 `%LOCALAPPDATA%` | SQLite 是 Python 內建，之後好做搜尋。見 `0011` |
+| App 新版檢查 | 問 GitHub 的最新發佈，結果存 24 小時（查不到存 1 小時）；版本號是 `backend/app/__init__.py` 的 `__version__` | 不會每次啟動都連網路；打包後沒有 `pyproject.toml`。見 `0011` |
 | 下載程序的管理 | 每個外部程式放進自己的 Windows Job Object；取消是結束整個 Job | App 被強制結束時下載也會一起結束。見 `0008` |
 | 檔名與重複檔 | 檔名只用標題；下載在任務的暫存資料夾完成，由引擎搬進下載資料夾時套用略過／覆蓋／自動改名 | 下載資料夾不會出現半成品，也不動使用者原本的檔案。見 `0009` |
 | MP3 封面 | 置中裁成正方形的 JPEG | 配合「唱片封套」的正方形縮圖 |
@@ -92,9 +93,13 @@ backend/app/
   domain/            資料模型與規則：DownloadTask（狀態機）、MediaInfo、ErrorCode、MediaEngine 介面
   infrastructure/
     engines/ytdlp/   YtDlpEngine，實作 MediaEngine
-    storage/         設定檔、歷史紀錄資料庫
+    storage/         設定檔、歷史紀錄資料庫、資料夾位置
     binaries/        外部程式的路徑與版本
-    logging/
+    logging/         記錄檔（含遮蔽個人路徑）
+    process.py       啟動外部程式的唯一入口（Job Object）
+    http.py          App 自己連網路的唯一入口
+    thumbnails.py releases.py shell.py   歷史縮圖、最新發佈、用 Windows 開啟東西
+  composition.py     把全部服務組起來（真的引擎、檔案、Windows）
 backend/tests/
 frontend/src/
   api/               唯一呼叫橋接層的地方
@@ -118,6 +123,8 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 9. 後端回傳錯誤代碼（`ErrorCode`），不回傳給人看的文字；文字放在介面的語言檔。
 10. 引擎不直接碰 `DownloadTask`：它回報事件，由服務層套用到任務上。
 11. 成品路徑不交給介面；介面用任務編號或歷史紀錄編號叫後端開啟資料夾。
+12. `services/` 不 import `infrastructure/`：需要的東西在 `services/ports.py` 定義成介面，由 `composition.py` 接上真的實作。
+13. App 自己連網路只能經由 `infrastructure/http.py`（https、主機允許清單、不跟隨轉址、大小上限）。
 
 介面與後端各有一份的常數（格式、音質、畫質、九種狀態、12 個錯誤代碼、可以重試的錯誤）在 `backend/app/domain/` 與 `frontend/src/types.ts`，要一起改。
 狀態轉換表有三處要一致：`domain/task.py` 的 `TRANSITIONS`、約定第 6 節、`架構.md` 的狀態圖。
@@ -156,6 +163,15 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 背景執行緒一律是 daemon；不用 `ThreadPoolExecutor`，它會讓 App 結束時等正在查詢的程序。
 - 設定的實作（`QueueSettings`）被佇列在鎖裡讀取，裡面不可以回頭呼叫佇列或拿會等佇列的鎖。
 
+### 設定、歷史、記錄檔（依據見 `docs/decisions/0011`）
+
+- 設定的讀取不拿鎖（整個物件一次換掉）；鎖的順序只有「設定的寫入鎖 → 佇列的鎖」。設定的監聽函式在寫入鎖裡被呼叫，裡面不可以改設定。
+- 抓回來的圖片交給 FFmpeg 前要先看檔頭，並用 `-f` 指定格式：讓 FFmpeg 自己猜，播放清單一類的格式可以叫它去讀別的檔案。
+- 歷史資料庫只有在確定損毀（不是資料庫、內容損毀）時才改名重來；磁碟滿、被鎖住不算。
+- 開啟檔案、資料夾、網頁不組指令列（不用 `explorer /select,`）：用 `infrastructure/shell.py`。
+- 記錄檔不記標題與檔案路徑；新的記錄如果可能帶路徑，靠 `logging/setup.py` 的遮蔽，不要自己另外處理。
+- 測試與 `scripts/manual/` 不用預設的資料夾：`build()` 要傳入暫存的資料夾。`Backend.start()` 會清下載資料夾裡的暫存，測試裡不要對真的「下載」資料夾呼叫。
+
 ### 工作流程
 
 - 一次只做一個功能或修正；開工前先說會改哪些檔案。
@@ -178,7 +194,7 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
   - Deno 用 `--js-runtimes deno:<絕對路徑>` 指定；相對路徑會找不到。
   - `--print` 會進入安靜模式，下載進度和「重試」那一行都會不見；要加 `--no-quiet` 與 `--progress`。
   - 下載進度印在 stdout、後處理（轉檔、合併）的進度印在 stderr：下載時兩條併成一條照順序讀。
-  - 取消要結束整棵程序樹：`yt-dlp.exe` 是兩層程序，只結束外層，內層和 FFmpeg 會繼續跑。外部程式一律經由 `process.py` 放進 Job Object 啟動，不直接用 `subprocess`，也不用 `taskkill`（見 `0008`）。
+  - 取消要結束整棵程序樹：`yt-dlp.exe` 是兩層程序，只結束外層，內層和 FFmpeg 會繼續跑。外部程式一律經由 `infrastructure/process.py` 放進 Job Object 啟動，不直接用 `subprocess`，也不用 `taskkill`（見 `0008`）。
   - 每個任務用自己的暫存資料夾（`<下載資料夾>\.md-tmp-<任務編號>`），整個下載在裡面完成，成品由引擎搬出來並套用重複檔規則；取消、失敗、成功後整個刪掉（見 `0009`）。
   - 失敗的結束代碼一律是 1，錯誤分類靠 `ERROR:` 之後的文字；`ERROR:` 那一行可能是空的，內容在下一行，所以要看整段。比對規則只放在 `errors.py`。比對不到的歸為未知錯誤，原文寫進記錄檔。
   - 重試那一行括號裡的次數會重新從 1 算，第幾次重試由引擎自己數。

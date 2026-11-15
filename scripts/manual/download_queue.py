@@ -1,7 +1,9 @@
-"""Runs the real queue (QueueService + MediaInfoService + the real yt-dlp engine) through one
-fixed scenario and prints every event the UI would receive.
+"""Runs the real back end (everything app/composition.py builds: the queue, the yt-dlp engine,
+settings and history on real files) through one fixed scenario and prints every event the UI
+would receive.
 Not part of CI: it needs the network and the programs in bin/ (python scripts/fetch_binaries.py).
-Settings and history are the in-memory stand-ins; nothing is saved.
+Settings, history and the log file go to a media-downloader-manual-queue-data folder in
+%TEMP%, never to the app's real folders; the history there is emptied at the start.
 
 Run from the repository root (takes a few minutes, downloads about 150 MB):
 
@@ -24,7 +26,8 @@ What it does, and what to look for:
        once the running ones have ended).
  4. 5 s later: adds the cancelled one again.
     -> same id, same place, "queued", later "downloading" from 0 %, and "done" in the end.
- 5. When everything has ended: prints the final queue, the history, what is left in the
+ 5. When everything has ended: prints the final queue, the history as it is read back from
+    the database (5 entries, each with a small thumbnail of a few KB), what is left in the
     folder (only finished files, no .md-tmp-* folders) and which of our processes are still
     alive (none).
 
@@ -41,19 +44,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "backend"))
 
+from app.composition import Event, build  # noqa: E402
 from app.domain.engine import EngineError  # noqa: E402
 from app.domain.media import Format  # noqa: E402
 from app.domain.task import TaskStatus  # noqa: E402
-from app.infrastructure.engines.ytdlp.engine import YtDlpEngine  # noqa: E402
-from app.services.media_info import MediaInfoService  # noqa: E402
-from app.services.ports import InMemoryHistory, InMemorySettings  # noqa: E402
-from app.services.queue import (  # noqa: E402
-    QueueEvent,
-    QueueItem,
-    QueueService,
-    TaskProgress,
-    TasksChanged,
-)
+from app.services.history import HistoryAdded  # noqa: E402
+from app.services.queue import QueueItem, TaskProgress, TasksChanged, TasksRemoved  # noqa: E402
 
 from engine import leftovers, say  # noqa: E402  (scripts/manual/engine.py)
 
@@ -90,9 +86,6 @@ def main() -> None:
     dest = Path(parser.parse_args().dest)
     dest.mkdir(parents=True, exist_ok=True)
 
-    engine = YtDlpEngine()
-    settings = InMemorySettings(str(dest), max_concurrent=3)
-    history = InMemoryHistory()
     step = {"cancel": False, "readded": False}
     long_id: list[str] = []
 
@@ -104,8 +97,7 @@ def main() -> None:
         say("-- cancel the long video")
         service.cancel(long_id[0])
         say("-- from now on: 1 download at a time (running ones are not stopped)")
-        settings.max_concurrent = 1
-        service.settings_changed()
+        backend.settings.update({"max_concurrent": 1})  # the settings tell the queue
         threading.Timer(5, readd).start()
 
     def readd() -> None:
@@ -113,7 +105,7 @@ def main() -> None:
         service.readd(long_id[0])
         step["readded"] = True
 
-    def on_event(event: QueueEvent) -> None:
+    def on_event(event: Event) -> None:
         if isinstance(event, TasksChanged):
             for item in event.tasks:
                 say(f"tasksChanged  {describe(item)}   (downloading now: {downloading_now()})")
@@ -126,11 +118,20 @@ def main() -> None:
                 step["cancel"] = True
                 say("-- will cancel the long video in 3 s")
                 threading.Timer(3, cancel_and_lower).start()
-        else:
+        elif isinstance(event, TasksRemoved):
             say(f"tasksRemoved  {event.ids}")
+        elif isinstance(event, HistoryAdded):
+            say(f"historyAdded  {event.entry.format} {event.entry.title}")
+        else:
+            say(f"settingsChanged  {event.settings}")
 
-    service = QueueService(engine, MediaInfoService(engine), settings, history, on_event)
-    service.start()
+    data = Path(tempfile.gettempdir()) / "media-downloader-manual-queue-data"
+    backend = build(on_event, data / "data", data / "local")
+    service = backend.queue
+    backend.history.clear()
+    backend.settings.set_download_dir(str(dest))
+    backend.settings.update({"max_concurrent": 3})
+    backend.start()
     try:
         long_id += service.add(MP4_URLS, Format.MP4, 1080)[:1]
         service.add(MP3_URLS, Format.MP3, 320)
@@ -139,7 +140,7 @@ def main() -> None:
             service.add(["this is not a url"], Format.MP3, 320)
         except EngineError as error:
             say(f"-- add() refused text that is no URL: {error.code}")
-        say(f"-- last used format, as remembered: {settings.last_format}")
+        say(f"-- last used format, as remembered: {backend.settings.get()}")
 
         started = time.monotonic()
         while time.monotonic() - started < TIME_LIMIT:
@@ -156,12 +157,17 @@ def main() -> None:
         print("\nfinal queue:")
         for item in service.items():
             print("  " + describe(item), "->", service.file_path(item.id))
-        print(f"\nhistory ({len(history.records)} entries):")
-        for record in history.records:
-            print(f"  {record.format} {record.quality} {record.size_bytes:>12,}  {record.title}")
+        entries = backend.history.list()
+        print(f"\nhistory, newest first ({len(entries)} entries):")
+        for entry in entries:
+            # A data URL is base64: 4 characters for 3 bytes.
+            thumb = f"thumbnail {len(entry.thumb) * 3 // 4:,} bytes" if entry.thumb else "NO THUMBNAIL"
+            print(f"  {entry.finished_at} {entry.format} {entry.quality} {entry.size_bytes:>12,}"
+                  f"  {thumb}  {entry.title}")  # fmt: skip
     finally:
-        service.shutdown()
+        backend.shutdown()
     leftovers(dest)
+    print(f"\nsettings, history and log file: {data}")
 
 
 if __name__ == "__main__":

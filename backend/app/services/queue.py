@@ -161,6 +161,8 @@ class QueueService:
                     self._start_lookup(entry)
             self._changed(*entries)
             self._fill_slots()
+        for task in tasks:
+            log.info("task %s added: %s %s %s", task.id, format, quality, task.url)
         if remember:
             self._settings.remember_format(format, quality)
         return [task.id for task in tasks]
@@ -274,6 +276,7 @@ class QueueService:
             )
             self._workers[task.id] = worker
             self._changed(entry)
+            log.info("task %s started", task.id)
             worker.start()
 
     def _start_lookup(self, entry: _Entry) -> None:
@@ -375,6 +378,7 @@ class QueueService:
                     return None
                 task.complete(outcome.size_bytes)
                 entry.file_path = outcome.file_path
+                log.info("task %s done: %s bytes", task.id, outcome.size_bytes)
                 return FinishedDownload(
                     task.url,
                     task.title or "",

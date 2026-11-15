@@ -9,6 +9,9 @@ PLATFORM = "youtube"
 
 # A host is accepted when it is one of these or a subdomain of one.
 ALLOWED_HOSTS = ("youtube.com", "youtu.be", "youtube-nocookie.com")
+# Where this platform's thumbnails are served from. The app fetches one for the history,
+# and only from these hosts (or a subdomain).
+THUMB_HOSTS = ("ytimg.com",)
 
 
 def check(url: str) -> None:

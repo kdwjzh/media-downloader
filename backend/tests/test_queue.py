@@ -8,6 +8,7 @@ from dataclasses import fields, replace
 
 import pytest
 from fake_engine import THUMB, WAIT, Download, FakeEngine, info
+from fakes import InMemoryHistory, InMemorySettings
 
 from app.domain.engine import (
     ConnectionLost,
@@ -24,7 +25,7 @@ from app.domain.media import Format, PlaylistInfo
 from app.domain.progress import Progress
 from app.domain.task import TaskStatus
 from app.services.media_info import MediaInfoService
-from app.services.ports import FinishedDownload, InMemoryHistory, InMemorySettings
+from app.services.ports import FinishedDownload
 from app.services.queue import (
     MAX_LOOKUPS,
     QueueEvent,
