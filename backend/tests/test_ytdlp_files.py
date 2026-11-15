@@ -12,7 +12,7 @@ from app.domain.engine import OnDuplicate
 from app.domain.media import Format
 from app.infrastructure import binaries
 from app.infrastructure.engines.ytdlp import files
-from app.infrastructure.engines.ytdlp.process import JobProcess, run
+from app.infrastructure.process import JobProcess, run
 
 
 def test_task_dir_is_empty_hidden_and_inside_the_download_folder(tmp_path: Path) -> None:

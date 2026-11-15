@@ -16,7 +16,7 @@ from app.domain.errors import ErrorCode
 from app.domain.media import MediaInfo, PlaylistInfo
 from app.infrastructure.engines.ytdlp import args, files, parse, urls
 from app.infrastructure.engines.ytdlp.errors import classify
-from app.infrastructure.engines.ytdlp.process import JobProcess, run
+from app.infrastructure.process import JobProcess, run
 
 # Backstops for a process that hangs; the network arguments in args.py end normal failures
 # much sooner. A playlist of 1,700 entries takes 11 s to list.

@@ -25,7 +25,7 @@
 - 程式以暫停狀態啟動（`CREATE_SUSPENDED`），放進 Job 之後才放行，所以它啟動的任何子程序一定在 Job 裡。
 - 取消就是結束整個 Job（`TerminateJobObject`）。不再使用 `taskkill`。
 - Job 的控制代碼只有 App 持有。App 不論怎麼結束，Windows 都會關掉它，Job 裡的程序跟著結束。
-- 實作在 `backend/app/infrastructure/engines/ytdlp/process.py`，用標準函式庫的 `ctypes`，沒有新增套件。
+- 實作在 `backend/app/infrastructure/process.py`，用標準函式庫的 `ctypes`，沒有新增套件。
 
 ## 理由
 
