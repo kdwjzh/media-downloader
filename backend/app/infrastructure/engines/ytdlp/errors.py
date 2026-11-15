@@ -12,7 +12,6 @@ from app.domain.errors import ErrorCode
 RULES: tuple[tuple[str, ErrorCode], ...] = (
     ("Private video", ErrorCode.PRIVATE),
     ("Sign in to confirm your age", ErrorCode.AGE_RESTRICTED),
-    # shortcut: no real sample of a members-only video yet; add one and adjust this needle.
     ("members-only", ErrorCode.MEMBERS_ONLY),
     ("not made this video available in your country", ErrorCode.GEO_BLOCKED),
     ("The playlist does not exist", ErrorCode.PLAYLIST_NOT_FOUND),

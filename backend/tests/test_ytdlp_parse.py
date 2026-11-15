@@ -177,6 +177,8 @@ ERRORS = {
     "private": ErrorCode.PRIVATE,
     "age_restricted": ErrorCode.AGE_RESTRICTED,
     "geo_blocked": ErrorCode.GEO_BLOCKED,
+    # A real one (2026-11-15); the video id and the name of the level are masked.
+    "members_only": ErrorCode.MEMBERS_ONLY,
     "playlist_not_found": ErrorCode.PLAYLIST_NOT_FOUND,
     "offline_lookup_proxy": ErrorCode.NETWORK,
     "offline_update_proxy": ErrorCode.NETWORK,
