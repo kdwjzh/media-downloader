@@ -12,8 +12,9 @@ class Language(StrEnum):
     EN = "en"
 
 
-# Mirrored in docs/介面與後端的約定.md section 5.3; change both together.
-MAX_CONCURRENT = range(1, 4)
+# Mirrored in frontend/src/types.ts and docs/介面與後端的約定.md section 5.3; change all three.
+# 4 and 5 were measured on 2026-11-15 (docs/技術驗證.md item 12).
+MAX_CONCURRENT = range(1, 6)
 
 
 @dataclass(frozen=True)

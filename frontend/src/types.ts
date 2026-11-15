@@ -5,6 +5,9 @@ export type Format = 'mp3' | 'mp4'
 
 export const MP3_BITRATES = [128, 192, 320] as const
 
+// Simultaneous downloads the settings page offers; must match the backend's MAX_CONCURRENT.
+export const CONCURRENT_CHOICES = [1, 2, 3, 4, 5] as const
+
 // Keys of `error.*` in the language files; must match the backend's ErrorCode.
 export type ErrorCode =
   | 'invalidUrl'

@@ -40,6 +40,7 @@ def test_defaults_are_those_of_the_contract() -> None:
 LEGAL = [
     ("max_concurrent", 1),
     ("max_concurrent", 2),
+    ("max_concurrent", 5),
     ("on_duplicate", "skip"),
     ("on_duplicate", "overwrite"),
     ("format", "mp4"),
@@ -63,7 +64,7 @@ def test_a_legal_value_is_taken_saved_and_announced(name: str, value: object) ->
 
 ILLEGAL = [
     ("max_concurrent", 0),
-    ("max_concurrent", 4),
+    ("max_concurrent", 6),
     ("max_concurrent", "2"),
     ("max_concurrent", 2.0),
     ("max_concurrent", True),
