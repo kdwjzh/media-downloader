@@ -57,8 +57,8 @@ LEGAL: dict[str, dict[TaskStatus, TaskStatus]] = {
     "report_progress": {S.DOWNLOADING: S.DOWNLOADING, S.RETRYING: S.DOWNLOADING},
     "connection_lost": {S.DOWNLOADING: S.RETRYING, S.RETRYING: S.RETRYING},
     "begin_post_processing": {S.DOWNLOADING: S.CONVERTING},
-    "complete": {S.DOWNLOADING: S.DONE, S.CONVERTING: S.DONE, S.MERGING: S.DONE},
-    "skip": {S.DOWNLOADING: S.DONE, S.CONVERTING: S.DONE, S.MERGING: S.DONE},
+    "complete": {s: S.DONE for s in (S.DOWNLOADING, S.RETRYING, S.CONVERTING, S.MERGING)},
+    "skip": {s: S.DONE for s in (S.DOWNLOADING, S.RETRYING, S.CONVERTING, S.MERGING)},
     "fail": {s: S.FAILED for s in (S.FETCHING, S.DOWNLOADING, S.RETRYING, S.CONVERTING, S.MERGING)},
     "cancel": {
         s: S.CANCELLED

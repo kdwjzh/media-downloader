@@ -395,7 +395,8 @@ class QueueService:
                 task.fail(ErrorCode.UNKNOWN)
         except InvalidTransition:
             log.exception("task %s could not take the engine's outcome", task.id)
-            task.fail(ErrorCode.UNKNOWN)  # allowed from every status a running task can have
+            # Not expected: every status a running task can have takes done, failed and cancelled.
+            task.fail(ErrorCode.UNKNOWN)
         return None
 
     def _on_engine_event(self, task_id: str, run: int, event: EngineEvent) -> None:

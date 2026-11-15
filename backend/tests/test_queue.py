@@ -549,12 +549,13 @@ def test_a_download_cancelled_by_the_engine_itself_ends_cancelled(q: Harness) ->
     assert q.item(task_id).status is S.CANCELLED
 
 
-def test_an_outcome_the_task_cannot_take_still_ends_the_task(q: Harness) -> None:
+def test_a_download_that_succeeds_while_retrying_is_done(q: Harness) -> None:
+    # The file is in the folder: whatever the task's status was, it must not show as failed.
     task_id, download = q.downloading()
     download.send(progress(100))
     download.send(ConnectionLost(1))
-    download.end(RESULT)  # "done" straight from retrying is not a legal step
-    assert (q.item(task_id).status, q.item(task_id).error) == (S.FAILED, ErrorCode.UNKNOWN)
+    download.end(RESULT)
+    assert (q.item(task_id).status, q.item(task_id).error) == (S.DONE, None)
 
 
 def test_a_failing_history_does_not_touch_the_task(q: Harness) -> None:

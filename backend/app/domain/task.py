@@ -28,7 +28,8 @@ TRANSITIONS: dict[TaskStatus, frozenset[TaskStatus]] = {
     _S.DOWNLOADING: frozenset(
         {_S.RETRYING, _S.CONVERTING, _S.MERGING, _S.DONE, _S.FAILED, _S.CANCELLED}
     ),
-    _S.RETRYING: frozenset({_S.DOWNLOADING, _S.FAILED, _S.CANCELLED}),
+    # DONE: a download that succeeded has its file in the folder, whatever was last reported.
+    _S.RETRYING: frozenset({_S.DOWNLOADING, _S.DONE, _S.FAILED, _S.CANCELLED}),
     _S.CONVERTING: frozenset({_S.DONE, _S.FAILED, _S.CANCELLED}),
     _S.MERGING: frozenset({_S.DONE, _S.FAILED, _S.CANCELLED}),
     _S.DONE: frozenset(),
