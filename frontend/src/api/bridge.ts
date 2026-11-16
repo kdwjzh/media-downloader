@@ -1,7 +1,7 @@
 // The only place in the frontend that talks to the pywebview bridge.
 
 interface BridgeApi {
-  ping(): Promise<string>
+  ping(): Promise<{ ok: boolean; data?: string }>
 }
 
 declare global {
@@ -32,5 +32,7 @@ function bridge(): Promise<BridgeApi> {
 }
 
 export async function ping(): Promise<string> {
-  return (await bridge()).ping()
+  const reply = await (await bridge()).ping()
+  if (!reply.ok || reply.data === undefined) throw new Error('ping failed')
+  return reply.data
 }
