@@ -63,6 +63,7 @@
     "converting": "轉檔中",
     "merging": "合併中",
     "done": "完成",
+    "skipped": "檔案已存在，已略過",
     "failed": "下載失敗：{{title}}。",
     "cancelled": "已取消"
   },

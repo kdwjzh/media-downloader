@@ -171,6 +171,15 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 歷史資料庫只有在確定損毀（不是資料庫、內容損毀）時才改名重來；磁碟滿、被鎖住不算。
 - 開啟檔案、資料夾、網頁不組指令列（不用 `explorer /select,`）：用 `infrastructure/shell.py`。
 - 記錄檔不記標題與檔案路徑；新的記錄如果可能帶路徑，靠 `logging/setup.py` 的遮蔽，不要自己另外處理。
+### 橋接層（依據見 `docs/decisions/0012`）
+
+- pywebview 會把 `BridgeApi` 上所有不是底線開頭的屬性公開給網頁（連屬性的屬性）：不是指令的成員一律底線開頭。`test_bridge_api.py` 會比對公開的名字就是約定的指令。
+- 每個指令都經過 `_run` 包起來，不讓例外漏到網頁。
+- `emit` 只排隊，不呼叫服務、不等網頁。送事件的只有 `EventSender` 那一條執行緒。
+- `closing` 的處理函式在介面執行緒上同步執行：裡面不可以呼叫 `evaluate_js` 或任何要等網頁的東西（會死結）。
+- 橋接層不 import pywebview：需要視窗的事由 `main.py` 包成函式傳進去。
+- 改了資料形狀、事件或指令名稱，`types.ts`、`api/index.ts` 要一起改；`test_types_ts.py` 會擋。
+
 - 測試與 `scripts/manual/` 不用預設的資料夾：`build()` 要傳入暫存的資料夾。`Backend.start()` 會清下載資料夾裡的暫存，測試裡不要對真的「下載」資料夾呼叫。
 
 ### 工作流程
@@ -225,6 +234,7 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 佇列的列高固定（72），任何狀態都不能改變列高；預覽區塊同理（172）。
 - 清單裡重複出現的按鈕，`aria-label` 要帶項目標題。
 - `frontend/src/mock/` 是階段 2 樣張的假資料，階段 4 接上後端時整個刪掉；元件不可以從它匯入型別（型別在 `frontend/src/types.ts`）。
+- `frontend/src/dev/` 是階段 4a 的檢查面板，只能在 `App.tsx` 用 `import.meta.env.DEV` 包起來動態載入，正式版建置時才會被拿掉；4b 整個刪掉。
 
 視覺決策：
 

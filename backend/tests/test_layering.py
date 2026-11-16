@@ -65,7 +65,9 @@ def test_the_check_itself_sees_imports() -> None:
         ("services/", ("app.infrastructure", "app.bridge", "app.composition")),
         ("services/", ("subprocess", "socket", "urllib.request", "sqlite3", "ctypes")),
         ("infrastructure/", ("app.services", "app.bridge", "app.composition")),
-        ("bridge/", ("app.infrastructure",)),
+        # Rule 5 and 12: the bridge passes calls on. It neither builds the services (main.py
+        # does, through composition.py) nor touches the window (main.py hands it functions).
+        ("bridge/", ("app.infrastructure", "app.main", "webview")),
     ],
 )
 def test_a_layer_does_not_import_what_it_must_not(folder: str, forbidden: tuple[str, ...]) -> None:
@@ -76,6 +78,13 @@ def test_external_programs_and_the_network_have_one_way_in() -> None:
     assert offenders("", ("subprocess",), allowed=("infrastructure/process.py",)) == []
     assert offenders("", ("urllib.request", "http.client", "socket"),
                      allowed=("infrastructure/http.py",)) == []  # fmt: skip
+
+
+def test_only_main_knows_pywebview() -> None:
+    assert offenders("", ("webview",), allowed=("main.py",)) == []
+    assert "app.composition" in imports(dict(sources())["bridge/api.py"])  # type only, below
+    source = dict(sources())["bridge/api.py"]
+    assert "if TYPE_CHECKING:  # the type only" in source
 
 
 def test_only_the_yt_dlp_engine_knows_yt_dlp() -> None:

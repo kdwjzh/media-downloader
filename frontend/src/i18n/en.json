@@ -63,6 +63,7 @@
     "converting": "Converting",
     "merging": "Merging",
     "done": "Done",
+    "skipped": "File already exists, skipped",
     "failed": "Download failed: {{title}}.",
     "cancelled": "Cancelled"
   },

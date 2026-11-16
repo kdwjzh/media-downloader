@@ -80,3 +80,107 @@ export interface QueueItem {
   skipped?: boolean
   error?: ErrorCode
 }
+
+// ---- Section 5.2 F: playlists
+
+export interface PlaylistEntry {
+  url: string
+  title?: string
+  channel?: string
+  durationSec?: number
+  /** Small thumbnail URL (at most 336x188). */
+  thumb?: string
+  /** False: private or deleted. Then only `url` is there; the row is dimmed and cannot be ticked. */
+  available: boolean
+}
+
+export interface PlaylistInfo {
+  url: string
+  title: string
+  channel?: string
+  platform: string
+  entries: PlaylistEntry[]
+}
+
+export type LookupResult = { kind: 'video'; info: MediaInfo } | { kind: 'playlist'; playlist: PlaylistInfo }
+
+// ---- G: history
+
+export interface HistoryEntry {
+  id: string
+  url: string
+  title: string
+  format: Format
+  quality: number
+  sizeBytes: number
+  /** ISO 8601 in UTC; show it with Intl.DateTimeFormat in local time. */
+  finishedAt: string
+  /** A data: URL of the small thumbnail kept on this computer. */
+  thumb?: string
+}
+
+// ---- H: settings, updates, about, open, progress
+
+export type OnDuplicate = 'skip' | 'overwrite' | 'rename'
+export type Language = 'system' | 'zh-TW' | 'en'
+
+export interface Settings {
+  /** Only changes through chooseDownloadFolder(). */
+  downloadDir: string
+  maxConcurrent: number
+  onDuplicate: OnDuplicate
+  /** format, mp3Bitrate and mp4Height are the defaults and what was used last. */
+  format: Format
+  mp3Bitrate: number
+  mp4Height: number
+  language: Language
+}
+
+/** What updateSettings() may change. */
+export type SettingsChanges = Partial<Omit<Settings, 'downloadDir'>>
+
+export interface AppUpdateInfo {
+  currentVersion: string
+  /** Only when a newer version exists. */
+  latestVersion?: string
+}
+
+export interface EngineUpdateResult {
+  updated: boolean
+  version: string
+}
+
+export interface Component {
+  name: string
+  license: string
+  version?: string
+}
+
+export interface AboutInfo {
+  appVersion: string
+  components: Component[]
+}
+
+export interface OpenResult {
+  opened: 'file' | 'folder' | 'none'
+}
+
+/** Replaces all five progress fields of the task: one that is absent has no value now. */
+export interface TaskProgress {
+  id: string
+  percent?: number
+  doneBytes: number
+  totalBytes?: number
+  speedBps?: number
+  etaSec?: number
+}
+
+// ---- Section 4: events
+
+export type BackendEvent =
+  | { type: 'tasksChanged'; tasks: QueueItem[] }
+  | { type: 'tasksRemoved'; ids: string[] }
+  | { type: 'taskProgress'; progress: TaskProgress }
+  | { type: 'historyAdded'; entry: HistoryEntry }
+  | { type: 'settingsChanged'; settings: Settings }
+  | { type: 'closeRequested' }
