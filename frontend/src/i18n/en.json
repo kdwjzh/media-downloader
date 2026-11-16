@@ -2,11 +2,6 @@
   "app": {
     "name": "Media Downloader"
   },
-  "backend": {
-    "connecting": "Connecting to the backend…",
-    "connected": "Backend connected",
-    "failed": "Can't reach the backend. Restart the app."
-  },
   "nav": {
     "label": "Main navigation",
     "downloads": "Downloads",
@@ -46,7 +41,11 @@
   "preview": {
     "loading": "Looking up video info…",
     "close": "Close preview",
-    "note4k": "4K uses VP9, which some players can't play."
+    "note4k": "4K uses VP9, which some players can't play.",
+    "playlistPending": "The playlist screen isn't ready yet. For now, paste the URL of each video on its own.",
+    "title": "Video preview",
+    "playlistCount_one": "{{count}} video",
+    "playlistCount_other": "{{count}} videos"
   },
   "queue": {
     "title": "Queue ({{count}})",
@@ -65,7 +64,9 @@
     "done": "Done",
     "skipped": "File already exists, skipped",
     "failed": "Download failed: {{title}}.",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "starting": "Starting download…",
+    "downloadingNoPercent": "Downloading"
   },
   "empty": {
     "title": "Paste a URL to start downloading",
@@ -118,7 +119,32 @@
     },
     "unknown": {
       "title": "Something unexpected went wrong",
-      "hint": "You can retry. If it keeps failing, the log file has details."
+      "hint": "You can retry. The log file has details."
     }
+  },
+  "close": {
+    "title_one": "{{count}} download hasn't finished. Close anyway?",
+    "title_other": "{{count}} downloads haven't finished. Close anyway?",
+    "body": "Items in progress or waiting will stop. The queue isn't kept, so you'll need to add them again. Finished files stay where they are.",
+    "keep": "Keep downloading",
+    "confirm": "Stop and close"
+  },
+  "crash": {
+    "title": "Something went wrong on this screen",
+    "body": "Downloads aren't affected and keep running. Reload the screen to get back to your queue.",
+    "reload": "Reload screen"
+  },
+  "toast": {
+    "openedFolder": "Couldn't find the file, so its folder was opened instead.",
+    "notFound": "Couldn't find the file or its folder. It may have been moved or deleted.",
+    "notUrl": "The clipboard doesn't contain a URL."
+  },
+  "live": {
+    "added": "Added to the queue: {{title}}",
+    "done": "Done: {{title}}",
+    "skipped": "File already exists, skipped: {{title}}",
+    "failed": "Download failed: {{title}}. {{reason}}",
+    "retrying": "Connection lost, retrying: {{title}}",
+    "removed": "Removed {{count}} from the queue"
   }
 }

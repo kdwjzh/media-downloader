@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Format } from '../types'
 
@@ -10,19 +11,24 @@ const sizes = {
 
 interface Props {
   format: Format
-  color?: string
+  src?: string
   size?: keyof typeof sizes
   loading?: boolean
 }
 
-export function Thumb({ format, color, size = 'row', loading = false }: Props) {
+export function Thumb({ format, src, size = 'row', loading = false }: Props) {
   const s = sizes[size]
+  const [broken, setBroken] = useState<string>()
   return (
     <div className={`${s.column} shrink-0`} aria-hidden="true">
       <div
-        className={`${s[format]} rounded-md bg-divider ${loading ? 'animate-skeleton motion-reduce:animate-none' : ''}`}
-        style={color ? { backgroundColor: color } : undefined}
-      />
+        className={`${s[format]} overflow-hidden rounded-md bg-divider ${loading ? 'animate-skeleton motion-reduce:animate-none' : ''}`}
+      >
+        {/* A thumbnail that fails to load leaves the placeholder showing. */}
+        {src && src !== broken && (
+          <img src={src} alt="" className="size-full object-cover" onError={() => setBroken(src)} />
+        )}
+      </div>
     </div>
   )
 }

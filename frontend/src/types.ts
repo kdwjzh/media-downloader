@@ -49,6 +49,8 @@ export type Preview =
   | { kind: 'loading'; url: string }
   | { kind: 'ready'; info: MediaInfo }
   | { kind: 'error'; url: string; code: ErrorCode }
+  // shortcut: 4b has no playlist screen yet, so a playlist only shows its size; 4c replaces this.
+  | { kind: 'playlist'; playlist: PlaylistInfo }
 
 export type TaskStatus =
   | 'queued'

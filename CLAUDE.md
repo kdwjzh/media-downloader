@@ -233,8 +233,12 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 芥末黃只當 MP3 標籤的底色；分隔線色不當控制項邊框。兩個的對比都不夠。
 - 佇列的列高固定（72），任何狀態都不能改變列高；預覽區塊同理（172）。
 - 清單裡重複出現的按鈕，`aria-label` 要帶項目標題。
-- `frontend/src/mock/` 是階段 2 樣張的假資料，階段 4 接上後端時整個刪掉；元件不可以從它匯入型別（型別在 `frontend/src/types.ts`）。
-- `frontend/src/dev/` 是階段 4a 的檢查面板，只能在 `App.tsx` 用 `import.meta.env.DEV` 包起來動態載入，正式版建置時才會被拿掉；4b 整個刪掉。
+- 介面的狀態放 `frontend/src/stores/`（Zustand）；元件透過 stores 做事，stores 透過 `api/` 叫後端。`start()` 在 `main.tsx` 的 React 外面呼叫，畫面壞掉時事件也照常收。依據見 `docs/decisions/0013`。
+- 關閉確認（`ConfirmCloseDialog`）要放在主內容區的錯誤邊界**外面**，而且自己訂閱 `onCloseRequested`：它壞掉時不再訂閱，`api/` 才會直接關窗。不要把訂閱搬進 store，那樣畫面壞了視窗會關不掉。
+- 預覽「當下選的格式」放在 store 不放元件：連續貼網址時要用它自動加入。
+- 晚到的 `lookup` 結果靠查詢編號丟掉；新的查詢、關閉預覽、加入佇列都要讓編號前進。
+- 元件測試用 jsdom（檔案開頭 `// @vitest-environment jsdom`），用假的 `window.pywebview.api` 測真的 `api/` 與 stores。jsdom 沒有 `<dialog>` 的 `showModal()`，測試裡自己補。
+- pywebview 視窗的寬高含標題列與外框：960x680 的網頁實際約 947x645，720x520 約 707x485。
 
 視覺決策：
 

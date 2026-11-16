@@ -1,6 +1,9 @@
 import { CheckCircle, Warning, X } from '@phosphor-icons/react'
+import { useState } from 'react'
+import { type TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { formatBytes, formatDuration } from '../format'
+import { addAgain, cancel, openFolder, openLog, remove, retry } from '../stores/queue'
 import { type QueueItem, RETRYABLE } from '../types'
 import { Button } from './Button'
 import { FormatTag, Thumb } from './Thumb'
@@ -25,14 +28,31 @@ function ProgressBar({ percent, label }: { percent?: number; label: string }) {
   )
 }
 
+/** Turned to it, nothing has come in yet: the first seconds, a 403 retry, a skipped file. */
+function isStarting(item: QueueItem): boolean {
+  return item.status === 'downloading' && !item.doneBytes && item.totalBytes === undefined
+}
+
+/** The bar's value: only a download with a real percentage fills it. */
+function barPercent(item: QueueItem): number | undefined {
+  if (isStarting(item)) return undefined
+  return item.status === 'downloading' || item.status === 'retrying' ? item.percent : undefined
+}
+
+function statusLabel(item: QueueItem, t: TFunction): string {
+  if (isStarting(item)) return t('status.starting')
+  if (item.status === 'downloading' && item.percent === undefined) return t('status.downloadingNoPercent')
+  return t(`status.${item.status}`, { percent: item.percent, n: item.attempt })
+}
+
 function Status({ item }: { item: QueueItem }) {
   const { t } = useTranslation()
   switch (item.status) {
     case 'downloading':
       return (
         <>
-          <span>{t('status.downloading', { percent: item.percent })}</span>
-          {item.doneBytes !== undefined && (
+          <span>{statusLabel(item, t)}</span>
+          {!isStarting(item) && item.doneBytes !== undefined && (
             <span>
               {formatBytes(item.doneBytes)}
               {item.totalBytes !== undefined && ` / ${formatBytes(item.totalBytes)}`}
@@ -42,13 +62,11 @@ function Status({ item }: { item: QueueItem }) {
           {item.etaSec !== undefined && <span>{t('status.eta', { time: formatDuration(item.etaSec) })}</span>}
         </>
       )
-    case 'retrying':
-      return <span>{t('status.retrying', { n: item.attempt })}</span>
     case 'done':
       return (
         <span className="flex items-center gap-1 text-success">
           <CheckCircle size={16} aria-hidden="true" />
-          {t('status.done')}
+          {item.skipped ? t('status.skipped') : t('status.done')}
           {item.sizeBytes !== undefined && <span className="ml-2">{formatBytes(item.sizeBytes)}</span>}
         </span>
       )
@@ -63,7 +81,11 @@ function Status({ item }: { item: QueueItem }) {
             <span className="font-medium text-danger">{title}</span> <span className="text-text">{hint}</span>
           </span>
           {code === 'unknown' && (
-            <button type="button" className="flex h-6 shrink-0 cursor-pointer items-center text-accent underline">
+            <button
+              type="button"
+              onClick={() => void openLog()}
+              className="flex h-6 shrink-0 cursor-pointer items-center text-accent underline"
+            >
               {t('action.openLog')}
             </button>
           )}
@@ -71,16 +93,21 @@ function Status({ item }: { item: QueueItem }) {
       )
     }
     default:
-      return <span>{t(`status.${item.status}`)}</span>
+      return <span>{statusLabel(item, t)}</span>
   }
 }
 
-function Actions({ item, title }: { item: QueueItem; title: string }) {
+function Actions({ item, title, onRemoved }: { item: QueueItem; title: string; onRemoved: () => void }) {
   const { t } = useTranslation()
   // Several rows carry the same button; the title tells a screen reader which row.
   const named = (key: string) => ({ 'aria-label': `${t(key)}: ${title}` })
-  const remove = (
-    <Button variant="icon" {...named('action.remove')} title={t('action.remove')}>
+  const removeButton = (
+    <Button
+      variant="icon"
+      {...named('action.remove')}
+      title={t('action.remove')}
+      onClick={() => void remove(item.id).then(onRemoved)}
+    >
       <X size={16} aria-hidden="true" />
     </Button>
   )
@@ -88,27 +115,35 @@ function Actions({ item, title }: { item: QueueItem; title: string }) {
     case 'done':
       return (
         <>
-          <Button {...named('action.openFolder')}>{t('action.openFolder')}</Button>
-          {remove}
+          <Button {...named('action.openFolder')} onClick={() => void openFolder(item.id)}>
+            {t('action.openFolder')}
+          </Button>
+          {removeButton}
         </>
       )
     case 'failed':
       return (
         <>
-          {RETRYABLE.has(item.error ?? 'unknown') && <Button {...named('action.retry')}>{t('action.retry')}</Button>}
-          {remove}
+          {RETRYABLE.has(item.error ?? 'unknown') && (
+            <Button {...named('action.retry')} onClick={() => void retry(item.id)}>
+              {t('action.retry')}
+            </Button>
+          )}
+          {removeButton}
         </>
       )
     case 'cancelled':
       return (
         <>
-          <Button {...named('action.addAgain')}>{t('action.addAgain')}</Button>
-          {remove}
+          <Button {...named('action.addAgain')} onClick={() => void addAgain(item.id)}>
+            {t('action.addAgain')}
+          </Button>
+          {removeButton}
         </>
       )
     default:
       return (
-        <Button variant="text" {...named('action.cancel')}>
+        <Button variant="text" {...named('action.cancel')} onClick={() => void cancel(item.id)}>
           {t('action.cancel')}
         </Button>
       )
@@ -123,19 +158,43 @@ const HAS_BAR: ReadonlySet<QueueItem['status']> = new Set([
   'merging',
 ])
 
-export function QueueRow({ item }: { item: QueueItem }) {
+interface Props {
+  item: QueueItem
+  /** The row's own remove button took it away: focus has to go somewhere else. */
+  onRemoved?: () => void
+}
+
+export function QueueRow({ item, onRemoved = () => {} }: Props) {
   const { t } = useTranslation()
   const title = item.title ?? item.url
-  // Only downloading and retrying carry a real percentage.
-  const percent = item.status === 'downloading' || item.status === 'retrying' ? item.percent : undefined
+  // Keyboard users never see the title attribute: while focus is in a row whose title is
+  // cut off, the full title lies over the text column instead (design step 5).
+  const [fullTitle, setFullTitle] = useState(false)
   return (
     // Fixed height in every state so the list never jumps when a status changes.
-    <li className="flex h-18 items-center gap-3 px-3">
-      <Thumb format={item.format} color={item.thumb} loading={item.status === 'fetching'} />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="truncate font-medium" title={title}>
+    <li
+      className="relative flex h-18 items-center gap-3 px-3"
+      onFocus={(e) => {
+        const p = e.currentTarget.querySelector('[data-title]')
+        setFullTitle(!!p && p.scrollWidth > p.clientWidth)
+      }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setFullTitle(false)
+      }}
+    >
+      <Thumb format={item.format} src={item.thumb} loading={item.status === 'fetching'} />
+      <div className="relative flex min-w-0 flex-1 flex-col gap-1">
+        <p data-title className="truncate font-medium" title={title}>
           {title}
         </p>
+        {fullTitle && (
+          <p
+            aria-hidden="true"
+            className="absolute -inset-x-1 top-0 z-20 line-clamp-3 rounded-lg border border-border bg-surface px-1 font-medium wrap-anywhere"
+          >
+            {title}
+          </p>
+        )}
         {item.status === 'failed' ? (
           // A failed row has no bar, so the message may use that space for a second
           // line: the hint is the next step and must not be cut off in a narrow window.
@@ -148,9 +207,7 @@ export function QueueRow({ item }: { item: QueueItem }) {
               <Status item={item} />
             </div>
             <div className="h-1.5">
-              {HAS_BAR.has(item.status) && (
-                <ProgressBar percent={percent} label={t(`status.${item.status}`, { percent, n: item.attempt })} />
-              )}
+              {HAS_BAR.has(item.status) && <ProgressBar percent={barPercent(item)} label={statusLabel(item, t)} />}
             </div>
           </>
         )}
@@ -158,7 +215,7 @@ export function QueueRow({ item }: { item: QueueItem }) {
       <div className="flex shrink-0 flex-col items-end justify-between self-stretch py-2">
         <FormatTag format={item.format} />
         <div className="flex items-center gap-1">
-          <Actions item={item} title={title} />
+          <Actions item={item} title={title} onRemoved={onRemoved} />
         </div>
       </div>
     </li>

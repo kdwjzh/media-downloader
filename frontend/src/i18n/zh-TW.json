@@ -2,11 +2,6 @@
   "app": {
     "name": "Media Downloader"
   },
-  "backend": {
-    "connecting": "正在連線到後端…",
-    "connected": "後端已連線",
-    "failed": "無法連線到後端，請重新啟動程式"
-  },
   "nav": {
     "label": "主要導覽",
     "downloads": "下載",
@@ -46,7 +41,11 @@
   "preview": {
     "loading": "正在查詢影片資訊…",
     "close": "關閉預覽",
-    "note4k": "4K 使用 VP9 編碼，部分播放器可能無法播放。"
+    "note4k": "4K 使用 VP9 編碼，部分播放器可能無法播放。",
+    "playlistPending": "播放列表的勾選畫面還沒完成，目前請逐一貼上單支影片的網址。",
+    "title": "影片預覽",
+    "playlistCount_one": "{{count}} 支影片",
+    "playlistCount_other": "{{count}} 支影片"
   },
   "queue": {
     "title": "佇列（{{count}}）",
@@ -65,7 +64,9 @@
     "done": "完成",
     "skipped": "檔案已存在，已略過",
     "failed": "下載失敗：{{title}}。",
-    "cancelled": "已取消"
+    "cancelled": "已取消",
+    "starting": "準備下載…",
+    "downloadingNoPercent": "下載中"
   },
   "empty": {
     "title": "貼上網址開始下載",
@@ -120,5 +121,30 @@
       "title": "下載時發生未預期的問題",
       "hint": "可以重試；如果還是不行，記錄檔裡有詳細資訊。"
     }
+  },
+  "close": {
+    "title_one": "還有 {{count}} 個下載沒完成，要關閉嗎？",
+    "title_other": "還有 {{count}} 個下載沒完成，要關閉嗎？",
+    "body": "關閉後，進行中與等待中的項目會停止，佇列不會保留，下次要重新加入。已完成的檔案不受影響。",
+    "keep": "繼續下載",
+    "confirm": "停止並關閉"
+  },
+  "crash": {
+    "title": "這個畫面出了問題",
+    "body": "下載不受影響，仍在背景進行。重新載入畫面後會回到目前的佇列。",
+    "reload": "重新載入畫面"
+  },
+  "toast": {
+    "openedFolder": "找不到檔案，已改開它原本所在的資料夾。",
+    "notFound": "找不到這個檔案和它所在的資料夾，可能已被移動或刪除。",
+    "notUrl": "剪貼簿裡的不是網址。"
+  },
+  "live": {
+    "added": "已加入佇列：{{title}}",
+    "done": "完成：{{title}}",
+    "skipped": "檔案已存在，已略過：{{title}}",
+    "failed": "下載失敗：{{title}}，{{reason}}",
+    "retrying": "連線中斷，正在重試：{{title}}",
+    "removed": "已從佇列移除 {{count}} 個項目"
   }
 }
