@@ -40,4 +40,4 @@ cookies*.txt
 Thumbs.db
 desktop.ini
 *.log
-.claude/settings.local.json
+.claude/
