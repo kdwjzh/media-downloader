@@ -1,4 +1,5 @@
-"""Throwaway helpers for the stage 1 spikes. Not part of the app; do not import from backend/."""
+"""Helpers for s11_record.py, which records the yt-dlp samples in backend/tests/fixtures/.
+Not part of the app; do not import from backend/."""
 
 import subprocess
 import sys
