@@ -1,0 +1,29 @@
+[youtube] Extracting URL: https://www.youtube.com/watch?v=jNQXAC9IVRw
+[youtube] jNQXAC9IVRw: Downloading webpage
+[youtube] jNQXAC9IVRw: Downloading tv samsung player API JSON
+[youtube] jNQXAC9IVRw: Downloading visionos player API JSON
+[youtube] jNQXAC9IVRw: Downloading player fad7e4e9-main
+[youtube] [jsc:deno] Solving JS challenges using deno
+[youtube] jNQXAC9IVRw: Downloading m3u8 information
+[info] jNQXAC9IVRw: Downloading 1 format(s): 251
+[info] Downloading video thumbnail 43 ...
+[info] Video Thumbnail 43 does not exist
+[info] Downloading video thumbnail 42 ...
+[info] Video Thumbnail 42 does not exist
+[info] Downloading video thumbnail 41 ...
+[info] Video Thumbnail 41 does not exist
+[info] Downloading video thumbnail 40 ...
+[info] Video Thumbnail 40 does not exist
+[info] Downloading video thumbnail 39 ...
+[info] Video Thumbnail 39 does not exist
+[info] Downloading video thumbnail 38 ...
+[info] Video Thumbnail 38 does not exist
+[info] Downloading video thumbnail 37 ...
+[info] Writing video thumbnail 37 to: <TEMP>\media-downloader-spike\record-403\task1\Me at the zoo.webp
+MD-NAME <TEMP>\media-downloader-spike\record-403\task1\Me at the zoo.webm
+MD-SIZES [] {"format_id": "251", "filesize": 252182, "filesize_approx": 252180}
+MD-PP {"status": "started", "postprocessor": "ThumbnailsConvertor"}
+[ThumbnailsConvertor] Converting thumbnail "<TEMP>\media-downloader-spike\record-403\task1\Me at the zoo.webp" to jpg
+MD-PP {"status": "finished", "postprocessor": "ThumbnailsConvertor"}
+Deleting original file <TEMP>\media-downloader-spike\record-403\task1\Me at the zoo.webp (pass -k to keep)
+ERROR: unable to download video data: HTTP Error 403: Forbidden

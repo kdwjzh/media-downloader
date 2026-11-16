@@ -1,5 +1,6 @@
 """YtDlpEngine: the MediaEngine that drives the official yt-dlp executable."""
 
+import logging
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -15,7 +16,7 @@ from app.domain.engine import (
 from app.domain.errors import ErrorCode
 from app.domain.media import MediaInfo, PlaylistInfo
 from app.infrastructure.engines.ytdlp import args, files, parse, urls
-from app.infrastructure.engines.ytdlp.errors import classify
+from app.infrastructure.engines.ytdlp.errors import classify, is_forbidden
 from app.infrastructure.process import JobProcess, run
 
 # Backstops for a process that hangs; the network arguments in args.py end normal failures
@@ -24,11 +25,17 @@ LOOKUP_TIMEOUT = 60
 VERSION_TIMEOUT = 20
 UPDATE_TIMEOUT = 180
 
+log = logging.getLogger(__name__)
+
+
+class _Forbidden(Exception):
+    """HTTP 403 before any data moved: worth one more try."""
+
 
 class YtDlpEngine:
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._running: dict[str, JobProcess] = {}
+        self._running: dict[str, JobProcess | None] = {}  # None: between two tries
         self._cancelled: set[str] = set()
 
     def fetch_info(self, url: str) -> MediaInfo | PlaylistInfo:
@@ -55,6 +62,27 @@ class YtDlpEngine:
     def _download(
         self, request: DownloadRequest, on_event: Callable[[EngineEvent], None]
     ) -> DownloadResult:
+        with self._lock:
+            # Registered for both tries, so a cancel between them is not lost.
+            self._running[request.task_id] = None
+        try:
+            try:
+                return self._attempt(request, on_event, retry_forbidden=True)
+            except _Forbidden:
+                log.info("task %s: HTTP 403 before any data, trying once more", request.task_id)
+                return self._attempt(request, on_event, retry_forbidden=False)
+        finally:
+            with self._lock:
+                self._running.pop(request.task_id, None)
+                self._cancelled.discard(request.task_id)
+
+    def _attempt(
+        self,
+        request: DownloadRequest,
+        on_event: Callable[[EngineEvent], None],
+        retry_forbidden: bool,
+    ) -> DownloadResult:
+        """One run of yt-dlp in a fresh task folder, which is gone again when this returns."""
         task_dir = files.create_task_dir(request.dest_dir, request.task_id)
         process: JobProcess | None = None
         try:
@@ -63,6 +91,9 @@ class YtDlpEngine:
             process = JobProcess(args.download(request, task_dir), merge_stderr=True)
             with self._lock:
                 self._running[request.task_id] = process
+                cancelled = request.task_id in self._cancelled
+            if cancelled:
+                process.kill()  # cancelled while there was no process to stop
             assert process.popen.stdout
 
             output = parse.DownloadOutput()
@@ -90,6 +121,10 @@ class YtDlpEngine:
             if existing:
                 return DownloadResult(str(existing), existing.stat().st_size, skipped=True)
             if code != 0 or not output.file or not output.name:
+                # Only before the first byte: afterwards the user has seen progress, and
+                # starting over would take it back.
+                if retry_forbidden and not output.downloaded and is_forbidden(output.other_text):
+                    raise _Forbidden
                 raise classify(output.other_text)
             placed, skipped = files.place(
                 Path(output.file),
@@ -104,15 +139,16 @@ class YtDlpEngine:
                 process.popen.wait()
                 process.close()
             with self._lock:
-                self._running.pop(request.task_id, None)
-                self._cancelled.discard(request.task_id)
+                if request.task_id in self._running:
+                    self._running[request.task_id] = None
             files.remove_dir(task_dir)
 
     def cancel(self, task_id: str) -> None:
         with self._lock:
-            process = self._running.get(task_id)
-            if process:
-                self._cancelled.add(task_id)
+            if task_id not in self._running:
+                return
+            self._cancelled.add(task_id)
+            process = self._running[task_id]
         if process:
             process.kill()  # download() notices, cleans up and raises DownloadCancelled
 

@@ -35,11 +35,22 @@ RULES: tuple[tuple[str, ErrorCode], ...] = (
 )
 
 
-def classify(stderr: str) -> EngineError:
+def _error_part(stderr: str) -> str:
     # Warnings come first and can mention things that did not fail. The text after "ERROR:"
     # may be on the following line, so everything from the first error on is searched.
     start = stderr.find("ERROR:")
-    text = stderr[start:] if start >= 0 else stderr
+    return stderr[start:] if start >= 0 else stderr
+
+
+def is_forbidden(stderr: str) -> bool:
+    """YouTube refuses a download now and then when several start together (about 1 in 15
+    with three or more); the same download works on the next try. The engine tries once
+    more; a second one is classified like any other error (unknown)."""
+    return "HTTP Error 403" in _error_part(stderr)
+
+
+def classify(stderr: str) -> EngineError:
+    text = _error_part(stderr)
     for needle, code in RULES:
         if needle in text:
             return EngineError(code, stderr.strip())

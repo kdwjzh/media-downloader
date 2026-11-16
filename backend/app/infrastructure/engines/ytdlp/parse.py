@@ -40,7 +40,7 @@ class DownloadOutput:
         self.file: str | None = None  # the finished file, printed at the very end
         self._format_ids: list[str] = []
         self._attempt = 0
-        self._downloaded = False
+        self.downloaded = False  # a progress line was seen: bytes of the file have moved
         self._post_processing = False
         self.other_text = ""  # everything that is not ours: warnings and the final error
 
@@ -53,7 +53,7 @@ class DownloadOutput:
             # The cover is converted before the download starts, so only what follows the
             # download counts. MoveFiles is not a stage the user waits for.
             if (
-                self._downloaded
+                self.downloaded
                 and not self._post_processing
                 and status.get("status") == "started"
                 and status.get("postprocessor") != "MoveFiles"
@@ -90,7 +90,7 @@ class DownloadOutput:
         if progress.get("status") not in ("downloading", "finished"):
             return None
         self._attempt = 0  # bytes are moving again
-        self._downloaded = True
+        self.downloaded = True
         format_id = str(info.get("format_id"))
         if format_id not in self._format_ids:
             self._format_ids.append(format_id)

@@ -4,12 +4,14 @@ Uses the engine's own argument builder, so the samples are exactly what the engi
 Personal paths are masked; lookup JSON is cut down to the fields listed below (values untouched).
 
   python scripts/spike/s11_record.py [info] [selected] [errors] [downloads] [retry]
+  python scripts/spike/s11_record.py forbidden     (not in the default set: it downloads until one fails)
 """
 
 import json
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -141,6 +143,35 @@ def retry(name: str, restore: bool) -> None:
     save(f"download/{name}.txt", "".join(lines))
 
 
+def forbidden(rounds: int = 25) -> None:
+    """YouTube answers HTTP 403 now and then when several downloads start together (about
+    1 in 15 at three or more). Downloads five at a time until one does and keeps its output."""
+    urls = [ZH, ZOO, UHD, SHORT, ZH]
+    for round_number in range(1, rounds + 1):
+        folder = fresh("record-403")
+        outputs: list[str] = [""] * len(urls)
+
+        def one(index: int, folder: Path = folder, outputs: list[str] = outputs) -> None:
+            request = DownloadRequest(f"rec{index}", urls[index], Format.MP3, 320, str(folder))
+            out = subprocess.run(args.download(request, folder / f"task{index}"),
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                 encoding="utf-8", errors="replace", creationflags=subprocess.CREATE_NO_WINDOW)  # fmt: skip
+            outputs[index] = out.stdout
+
+        threads = [threading.Thread(target=one, args=(i,)) for i in range(len(urls))]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        hits = [text for text in outputs if "HTTP Error 403" in text]
+        failed = sum("ERROR:" in text for text in outputs)
+        print(f"  round {round_number}: {failed} failed, {len(hits)} with 403", flush=True)
+        if hits:
+            save("download/http_403.txt", hits[0])
+            return
+    print("  no 403 in", rounds * len(urls), "downloads")
+
+
 if __name__ == "__main__":
     wanted = sys.argv[1:] or ["info", "selected", "errors", "downloads", "retry"]
     if "info" in wanted:
@@ -156,3 +187,5 @@ if __name__ == "__main__":
     if "retry" in wanted:
         retry("retry_then_resume", restore=True)
         retry("retry_then_give_up", restore=False)
+    if "forbidden" in wanted:
+        forbidden()

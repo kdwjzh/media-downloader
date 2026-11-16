@@ -17,7 +17,7 @@ from app.domain.errors import ErrorCode
 from app.domain.media import QUALITIES, Format, MediaInfo, PlaylistInfo
 from app.domain.progress import ProgressTracker
 from app.infrastructure.engines.ytdlp import parse
-from app.infrastructure.engines.ytdlp.errors import classify
+from app.infrastructure.engines.ytdlp.errors import classify, is_forbidden
 
 FIXTURES = Path(__file__).parent / "fixtures" / "ytdlp"
 SELECTED: dict[str, dict[str, str]] = json.loads((FIXTURES / "selected.json").read_text("utf-8"))
@@ -91,6 +91,24 @@ def test_retries_are_counted_here_because_yt_dlp_starts_over() -> None:
     assert output.file is None
     # The message is on the line after an empty "ERROR:".
     assert classify(output.other_text).code is ErrorCode.NETWORK
+
+
+def test_a_403_comes_before_any_progress_line() -> None:
+    # Recorded 2026-11-16: the cover was fetched and converted, then the file itself refused.
+    output, events = play("http_403")
+    assert events == [FileSizes((252182,))]
+    assert not output.downloaded and output.file is None
+    assert is_forbidden(output.other_text)
+    assert classify(output.other_text).code is ErrorCode.UNKNOWN  # what a second 403 becomes
+
+
+def test_only_a_403_error_counts_as_forbidden() -> None:
+    assert is_forbidden(read("errors/http_403.txt"))
+    assert not is_forbidden("WARNING: HTTP Error 403: Forbidden\nERROR: Private video")
+    others = [p for p in (FIXTURES / "errors").glob("*.txt") if p.stem != "http_403"]
+    assert not any(is_forbidden(p.read_text(encoding="utf-8")) for p in others)
+    assert not is_forbidden(play("retry_then_give_up")[0].other_text)
+    assert play("mp3")[0].downloaded and play("mp4")[0].downloaded
 
 
 def lookup(name: str) -> MediaInfo | PlaylistInfo:
