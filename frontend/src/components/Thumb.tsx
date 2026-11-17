@@ -7,6 +7,8 @@ import type { Format } from '../types'
 const sizes = {
   row: { column: 'w-23', mp3: 'size-13', mp4: 'h-13 w-23' },
   preview: { column: '', mp3: 'size-24', mp4: 'h-[90px] w-40' },
+  // The playlist's 56-high rows (pages/playlist.md).
+  small: { column: 'w-[71px]', mp3: 'size-10', mp4: 'h-10 w-[71px]' },
 }
 
 interface Props {

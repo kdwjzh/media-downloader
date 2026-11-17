@@ -18,6 +18,7 @@
     "audioLabel": "Audio quality",
     "videoLabel": "Video quality",
     "kbps": "{{n}} kbps",
+    "upTo": "Up to {{n}}p",
     "exact": "{{n}}p"
   },
   "size": {
@@ -42,15 +43,14 @@
     "loading": "Looking up video info…",
     "close": "Close preview",
     "note4k": "4K uses VP9, which some players can't play.",
-    "playlistPending": "The playlist screen isn't ready yet. For now, paste the URL of each video on its own.",
     "title": "Video preview",
-    "playlistCount_one": "{{count}} video",
-    "playlistCount_other": "{{count}} videos"
+    "slow": "Still looking ({{n}} s). Playlists and channels with many videos take longer."
   },
   "queue": {
-    "title": "Queue ({{count}})",
+    "title": "Queue ({{count, number}})",
     "clearFinished": "Clear finished",
-    "emptyInline": "The queue is empty"
+    "emptyInline": "The queue is empty",
+    "cancelAll": "Cancel all"
   },
   "status": {
     "queued": "Waiting",
@@ -145,6 +145,25 @@
     "skipped": "File already exists, skipped: {{title}}",
     "failed": "Download failed: {{title}}. {{reason}}",
     "retrying": "Connection lost, retrying: {{title}}",
-    "removed": "Removed {{count}} from the queue"
+    "removed": "Removed {{count}} from the queue",
+    "addedMany_one": "Added {{count, number}} item to the queue",
+    "addedMany_other": "Added {{count, number}} items to the queue"
+  },
+  "playlist": {
+    "count_one": "{{count, number}} video",
+    "count_other": "{{count, number}} videos",
+    "selectAll": "Select all",
+    "selected": "{{selected, number}} of {{total, number}} selected",
+    "unavailable": "Unavailable",
+    "add_one": "Add {{count, number}} to queue",
+    "add_other": "Add {{count, number}} to queue",
+    "noneSelected": "Select at least one item",
+    "close": "Close playlist",
+    "empty": "This playlist has no videos"
+  },
+  "cancelAll": {
+    "title_one": "{{count, number}} item hasn't finished. Cancel it?",
+    "title_other": "{{count, number}} items haven't finished. Cancel them all?",
+    "body": "Items in progress or waiting will stop. Finished files stay where they are. Cancelled items have to be added again one by one."
   }
 }

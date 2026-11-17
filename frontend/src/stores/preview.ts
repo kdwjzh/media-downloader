@@ -63,7 +63,7 @@ export async function lookUp(text: string): Promise<void> {
     void addAuto(preview.url, { format, quality: format === 'mp3' ? choice.mp3Bitrate : choice.mp4Height })
   }
   const mine = ++current
-  usePreview.setState({ preview: { kind: 'loading', url }, choice: remembered(), touched: false })
+  usePreview.setState({ preview: { kind: 'loading', url, started: Date.now() }, choice: remembered(), touched: false })
   const reply = await api.lookup(url)
   if (mine !== current) return
   usePreview.setState({
@@ -95,6 +95,25 @@ export async function addPreview(): Promise<boolean> {
   }
   usePreview.setState({ preview: null })
   announce('live.added', { title: preview.info.title })
+  return true
+}
+
+/** The playlist screen's button: every ticked entry, in the list's order, with one format.
+ *  The list has no heights per video, so MP4 sends the ceiling and each video gets its best
+ *  height at or under it. True when added. */
+export async function addPlaylist(urls: string[]): Promise<boolean> {
+  const { preview, choice } = usePreview.getState()
+  if (preview?.kind !== 'playlist' || urls.length === 0) return false
+  const quality = choice.format === 'mp3' ? choice.mp3Bitrate : choice.mp4Height
+  const mine = ++current
+  const reply = await api.addToQueue(urls, choice.format, quality)
+  if (mine !== current) return false
+  if (!reply.ok) {
+    usePreview.setState({ preview: { kind: 'error', url: preview.playlist.url, code: reply.error } })
+    return false
+  }
+  usePreview.setState({ preview: null })
+  announce('live.addedMany', { count: urls.length })
   return true
 }
 

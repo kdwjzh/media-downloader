@@ -81,6 +81,17 @@ export const retry = (id: string) => api.retryTask(id)
 export const addAgain = (id: string) => api.readdTask(id)
 export const openLog = () => api.openLogFile()
 
+/** Every unfinished task, one cancel_task each (decided in 4c: no command of its own).
+ *  The calls go out together: one after another took ~0.1 s each in the real window, 9.8 s
+ *  for 93. The waiting ones go first, so none gets a free slot and starts while the
+ *  running ones stop. */
+export async function cancelAll(): Promise<void> {
+  const unfinished = useQueue.getState().items.filter((item) => !FINISHED.has(item.status))
+  const cancelEach = (items: QueueItem[]) => Promise.all(items.map((item) => api.cancelTask(item.id)))
+  await cancelEach(unfinished.filter((item) => item.status === 'queued'))
+  await cancelEach(unfinished.filter((item) => item.status !== 'queued'))
+}
+
 export async function remove(id: string): Promise<void> {
   if ((await api.removeTask(id)).ok) announce('live.removed', { count: 1 })
 }

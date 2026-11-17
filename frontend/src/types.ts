@@ -5,6 +5,9 @@ export type Format = 'mp3' | 'mp4'
 
 export const MP3_BITRATES = [128, 192, 320] as const
 
+// MP4 height ceilings, best first; must match the backend's QUALITIES (domain/media.py).
+export const MP4_HEIGHTS = [2160, 1440, 1080, 720, 480, 360, 240, 144] as const
+
 // Simultaneous downloads the settings page offers; must match the backend's MAX_CONCURRENT.
 export const CONCURRENT_CHOICES = [1, 2, 3, 4, 5] as const
 
@@ -46,10 +49,11 @@ export interface MediaInfo {
 }
 
 export type Preview =
-  | { kind: 'loading'; url: string }
+  /** `started`: Date.now() when the lookup began, for the "still looking" line. */
+  | { kind: 'loading'; url: string; started: number }
   | { kind: 'ready'; info: MediaInfo }
   | { kind: 'error'; url: string; code: ErrorCode }
-  // shortcut: 4b has no playlist screen yet, so a playlist only shows its size; 4c replaces this.
+  // Shown as the tick list in place of the preview and the queue (pages/playlist.md).
   | { kind: 'playlist'; playlist: PlaylistInfo }
 
 export type TaskStatus =

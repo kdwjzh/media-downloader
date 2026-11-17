@@ -4,7 +4,9 @@
 
 貼的是播放列表網址時，主畫面的預覽區塊與佇列換成這個畫面。不是另開視窗；左側導覽和網址列都還在。按「取消」、✕ 或加入佇列後回到主畫面，佇列原樣保留。
 
-查詢中與查詢失敗沿用主畫面預覽區塊的樣子（`pages/main.md`），查到後才換成下面的版面。
+查詢中與查詢失敗沿用主畫面預覽區塊的樣子（`pages/main.md`），查到後才換成下面的版面。頻道網址（`/@頻道/videos`）也走這個畫面。
+
+實作：`frontend/src/components/PlaylistPanel.tsx`。決定的背景見 `docs/decisions/0014`。
 
 ## 版面
 
@@ -33,23 +35,46 @@
 - 預設全部勾選（無法下載的項目除外）。
 - 全選勾選框有三種狀態：全選、全不選、部分選（`indeterminate`）。部分選時按一下變成全選。
 - 整列都可以點來切換勾選。已勾選的列不另外上色，避免整片都是淡梅紫。
-- 鍵盤：Tab 進入清單後，上下鍵移動、空白鍵切換勾選；再按 Tab 離開清單到按鈕列。
-- 無法下載的項目：勾選框停用、文字用灰紫、右側顯示「無法下載」取代時長，不計入「已選 N / M」的 M。
-- 清單超過 100 列時用虛擬清單。
-- 底部按鈕列固定：「取消」（次要）與「將 N 個項目加入佇列」（主要）。N 是 0 時主要按鈕停用，左側顯示「至少勾選一個項目」。
+- 鍵盤：Tab 進入清單後，上下鍵移動、空白鍵切換勾選，Home／End 到頭尾、PgUp／PgDn 一次移一頁；再按 Tab 離開清單到按鈕列。清單是一個 Tab 停駐點（`role="listbox"` 加 `aria-multiselectable`，目前的列用 `aria-activedescendant` 指出，焦點框畫在那一列上）。無法下載的列也走得到（`aria-disabled`），螢幕閱讀器才唸得到「無法下載」。
+- 無法下載的項目：只有網址，標題的位置顯示網址；勾選框停用、文字用灰紫、右側顯示「無法下載」取代時長，不計入「已選 N / M」的 M。有標題但沒有時長的項目算可以下載，時長留白。
+- 清單超過 100 列時用虛擬清單（MASTER「清單的列」）。實測 5,339 支的頻道頁可以順暢捲動。
+- 列表是空的（0 支）：清單位置顯示一行 `playlist.empty`，全選與主要按鈕停用。
+- 底部按鈕列固定：「取消」（次要）與「將 N 個項目加入佇列」（主要）。N 是 0 時主要按鈕停用，左側顯示「至少勾選一個項目」。按下主要按鈕後到後端回覆前也停用（避免一次加兩批）。
+- 畫面出現時焦點在主要按鈕上（同單支影片的預覽）。
+- 工具列在窄視窗或英文時可以換成兩行（格式與畫質移到第二行），不截斷。
+- 整批加入用一次 `add_to_queue`，順序跟列表一樣。MP4 傳畫質上限（例如 1080），每支影片拿它有的、不超過上限的最高畫質。
+
+## 什麼時候回到主畫面
+
+（2026-11-17 決定）
+
+| 情況 | 處理 |
+|---|---|
+| 按「取消」或 ✕ | 回到主畫面，佇列原樣保留，焦點回網址框 |
+| 按「將 N 個項目加入佇列」 | 回到主畫面，焦點回網址框，朗讀 `live.addedMany`。不顯示 toast，畫面不自動捲到新項目 |
+| 勾選畫面開著時又貼了新網址 | 直接查新的網址，勾選畫面關掉，不加入佇列（跟「查詢失敗時貼新網址」一樣）|
+| 加入時後端回錯誤 | 換成預覽區塊的失敗樣子 |
+
+## 查詢很久的時候
+
+查詢超過 5 秒時，預覽區塊在「正在查詢影片資訊…」下面多一行灰字 `preview.slow`，每秒更新真的秒數。這行不放進朗讀區（不會每秒唸一次），太長時截斷、`title` 放全文，不改變預覽區塊的高度。實測 1,700 支約 11 秒、5,339 支的頻道頁約 58 秒。
 - 全選這組行為是一般慣例，ui-ux-pro-max 沒有對應規則。
 
 ## 文案
 
 | 鍵 | 中文 | English |
 |---|---|---|
-| `playlist.count` | {{count}} 支影片 | {{count}} videos |
+| `playlist.count` | {{count}} 支影片 | {{count}} video(s)（分單複數） |
 | `playlist.selectAll` | 全選 | Select all |
 | `playlist.selected` | 已選 {{selected}} / {{total}} | {{selected}} of {{total}} selected |
 | `playlist.unavailable` | 無法下載 | Unavailable |
-| `playlist.add` | 將 {{count}} 個項目加入佇列 | Add {{count}} to queue |
-| `playlist.addOne` | 將 1 個項目加入佇列 | Add 1 to queue |
+| `playlist.add` | 將 {{count}} 個項目加入佇列 | Add {{count}} to queue（`_one`／`_other` 兩個鍵） |
 | `playlist.noneSelected` | 至少勾選一個項目 | Select at least one item |
 | `playlist.close` | 關閉播放列表 | Close playlist |
+| `playlist.empty` | 這個播放列表沒有影片 | This playlist has no videos |
+| `live.addedMany` | 已將 {{count}} 個項目加入佇列 | Added {{count}} item(s) to the queue（分單複數） |
+| `preview.slow` | 已查詢 {{n}} 秒。播放列表或頻道的影片很多時，要等比較久。 | Still looking ({{n}} s). Playlists and channels with many videos take longer. |
+
+數量用 `{{count, number}}` 寫，超過一千時有千分位。
 
 格式、音質、畫質、取消用 MASTER 的共用文案。

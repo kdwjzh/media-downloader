@@ -95,5 +95,14 @@ def test_the_receiver_name_matches() -> None:
     assert f"{RECEIVER}?:" in (FRONTEND / "api" / "bridge.ts").read_text(encoding="utf-8")
 
 
+def test_quality_choices_match() -> None:
+    from app.domain.media import QUALITIES, Format
+
+    for name, fmt in (("MP3_BITRATES", Format.MP3), ("MP4_HEIGHTS", Format.MP4)):
+        found = re.search(rf"export const {name} = \[([\d, ]+)\]", TYPES)
+        assert found, f"{name} not found"
+        assert sorted(int(n) for n in found.group(1).split(",")) == sorted(QUALITIES[fmt])
+
+
 def test_the_check_itself_reads_the_files() -> None:
     assert len(ts_fields("QueueItem")) == 16  # or every comparison above proves nothing

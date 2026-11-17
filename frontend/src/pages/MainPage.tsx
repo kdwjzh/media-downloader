@@ -1,12 +1,14 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../components/Button'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { PlaylistPanel } from '../components/PlaylistPanel'
 import { PreviewPanel } from '../components/PreviewPanel'
-import { QueueRow } from '../components/QueueRow'
+import { QueueList } from '../components/QueueList'
 import { isOtherTextField, looksLikeUrl } from '../paste'
 import { showToast } from '../stores/notices'
 import { lookUp, usePreview } from '../stores/preview'
-import { FINISHED, clearFinished, useQueue } from '../stores/queue'
+import { FINISHED, cancelAll, clearFinished, useQueue } from '../stores/queue'
 
 function EmptyState() {
   const { t } = useTranslation()
@@ -30,8 +32,10 @@ export function MainPage() {
   const [url, setUrl] = useState('')
   const urlBox = useRef<HTMLInputElement>(null)
   const queueHeading = useRef<HTMLHeadingElement>(null)
-  const hasPreview = usePreview((s) => s.preview !== null)
+  const preview = usePreview((s) => s.preview)
   const queue = useQueue((s) => s.items)
+  const [askCancelAll, setAskCancelAll] = useState(false)
+  const unfinished = queue.filter((item) => !FINISHED.has(item.status)).length
 
   function submit(text: string) {
     setUrl('') // emptied right away, ready for the next one
@@ -60,6 +64,7 @@ export function MainPage() {
   }, [])
 
   const focusQueue = () => queueHeading.current?.focus()
+  const focusUrl = () => urlBox.current?.focus()
 
   return (
     <main className="flex min-w-0 flex-1 flex-col gap-4 p-6 pl-2">
@@ -92,34 +97,54 @@ export function MainPage() {
         </div>
       </form>
 
-      <PreviewPanel onDone={() => urlBox.current?.focus()} />
-
-      {queue.length === 0 && !hasPreview ? (
-        <EmptyState />
+      {preview?.kind === 'playlist' ? (
+        // Replaces the preview and the queue until it is added or closed (pages/playlist.md).
+        <PlaylistPanel playlist={preview.playlist} onDone={focusUrl} />
       ) : (
-        <section className="flex min-h-0 flex-1 flex-col gap-2">
-          <div className="flex h-8 items-center justify-between">
-            {/* Takes focus when the row or button that had it goes away. */}
-            <h2 ref={queueHeading} tabIndex={-1} className="font-medium">
-              {t('queue.title', { count: queue.length })}
-            </h2>
-            {queue.some((item) => FINISHED.has(item.status)) && (
-              <Button variant="text" onClick={() => void clearFinished().then(focusQueue)}>
-                {t('queue.clearFinished')}
-              </Button>
-            )}
-          </div>
-          {queue.length === 0 ? (
-            <p className="text-text-muted">{t('queue.emptyInline')}</p>
+        <>
+          <PreviewPanel onDone={focusUrl} />
+          {queue.length === 0 && !preview ? (
+            <EmptyState />
           ) : (
-            <ul className="min-h-0 divide-y divide-divider overflow-y-auto rounded-[10px] bg-surface">
-              {queue.map((item) => (
-                <QueueRow key={item.id} item={item} onRemoved={focusQueue} />
-              ))}
-            </ul>
+            <section className="flex min-h-0 flex-1 flex-col gap-2">
+              <div className="flex h-8 items-center gap-2">
+                {/* Takes focus when the row or button that had it goes away. */}
+                <h2 ref={queueHeading} tabIndex={-1} className="mr-auto font-medium">
+                  {t('queue.title', { count: queue.length })}
+                </h2>
+                {unfinished > 0 && (
+                  <Button variant="text" onClick={() => setAskCancelAll(true)}>
+                    {t('queue.cancelAll')}
+                  </Button>
+                )}
+                {queue.some((item) => FINISHED.has(item.status)) && (
+                  <Button variant="text" onClick={() => void clearFinished().then(focusQueue)}>
+                    {t('queue.clearFinished')}
+                  </Button>
+                )}
+              </div>
+              {queue.length === 0 ? (
+                <p className="text-text-muted">{t('queue.emptyInline')}</p>
+              ) : (
+                <QueueList items={queue} onRemoved={focusQueue} />
+              )}
+            </section>
           )}
-        </section>
+        </>
       )}
+      <ConfirmDialog
+        open={askCancelAll}
+        title={t('cancelAll.title', { count: unfinished })}
+        body={t('cancelAll.body')}
+        keepLabel={t('close.keep')}
+        confirmLabel={t('queue.cancelAll')}
+        onKeep={() => setAskCancelAll(false)}
+        onConfirm={() => {
+          setAskCancelAll(false)
+          // The button goes away with the last unfinished task; focus has to land somewhere.
+          void cancelAll().then(focusQueue)
+        }}
+      />
     </main>
   )
 }

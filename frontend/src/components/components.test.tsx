@@ -2,7 +2,7 @@
 // The screen against a stand-in for pywebview: the real api/ and stores, a fake
 // window.pywebview.api, events pushed through window.mediaDownloaderEvent. No Python.
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest'
 import type { BackendEvent, MediaInfo, Preview, QueueItem } from '../types'
 
@@ -122,7 +122,7 @@ test('a fetching row shows the URL where the title will be', () => {
   expect(text()).toContain('https://youtu.be/a')
 })
 
-// ---- the preview's three states, and the temporary playlist one
+// ---- the preview's three states
 
 function preview(p: Preview) {
   usePreview.setState({ preview: p })
@@ -130,9 +130,23 @@ function preview(p: Preview) {
 }
 
 test('a preview looking up', () => {
-  preview({ kind: 'loading', url: 'https://youtu.be/v' })
+  preview({ kind: 'loading', url: 'https://youtu.be/v', started: Date.now() })
   expect(screen.getByRole('region').getAttribute('aria-busy')).toBe('true')
   expect(text()).toContain('Looking up video info…')
+})
+
+test('a lookup past five seconds counts the real seconds, outside the live status', () => {
+  vi.useFakeTimers()
+  try {
+    preview({ kind: 'loading', url: 'https://youtu.be/v', started: Date.now() })
+    act(() => vi.advanceTimersByTime(4000))
+    expect(text()).not.toContain('Still looking')
+    act(() => vi.advanceTimersByTime(8000))
+    expect(text()).toContain('Still looking (12 s)')
+    expect(screen.getByRole('status').textContent).toBe('Looking up video info…')
+  } finally {
+    vi.useRealTimers()
+  }
 })
 
 test('a preview found, with the choice remembered and the real thumbnail', () => {
@@ -150,11 +164,6 @@ test('a preview that failed', async () => {
   fireEvent.click(screen.getByText('Retry'))
   await settle()
   expect(py.lookup).toHaveBeenCalledWith('https://youtu.be/v')
-})
-
-test('a playlist preview says the playlist screen is not there yet', () => {
-  preview({ kind: 'playlist', playlist: { url: 'p', title: 'Top 100', platform: 'youtube', entries: [{ url: 'x', available: true }] } })
-  expect(text()).toContain('Top 1001 video')
 })
 
 // ---- every button reaches the right command
@@ -248,11 +257,12 @@ test('closing with tasks running asks first; keeping open does not close', async
   const dialog = screen.getByRole('dialog')
   expect(dialog.textContent).toContain("1 download hasn't finished")
   expect(document.activeElement?.textContent).toBe('Keep downloading')
-  await act(async () => fireEvent.click(screen.getByText('Keep downloading')))
+  // The page's own cancel-all dialog is in the document too, closed: ask this one.
+  await act(async () => fireEvent.click(within(dialog).getByText('Keep downloading')))
   await settle()
   expect(py.confirm_close).not.toHaveBeenCalled()
   await send({ type: 'closeRequested' })
-  await act(async () => fireEvent.click(screen.getByText('Stop and close')))
+  await act(async () => fireEvent.click(within(dialog).getByText('Stop and close')))
   await settle()
   expect(py.confirm_close).toHaveBeenCalledTimes(1)
 })

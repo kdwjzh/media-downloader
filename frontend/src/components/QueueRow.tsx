@@ -1,5 +1,5 @@
 import { CheckCircle, Warning, X } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { type CSSProperties, useState } from 'react'
 import { type TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { formatBytes, formatDuration } from '../format'
@@ -162,9 +162,11 @@ interface Props {
   item: QueueItem
   /** The row's own remove button took it away: focus has to go somewhere else. */
   onRemoved?: () => void
+  /** Its place in a virtual list. */
+  style?: CSSProperties
 }
 
-export function QueueRow({ item, onRemoved = () => {} }: Props) {
+export function QueueRow({ item, onRemoved = () => {}, style }: Props) {
   const { t } = useTranslation()
   const title = item.title ?? item.url
   // Keyboard users never see the title attribute: while focus is in a row whose title is
@@ -173,6 +175,8 @@ export function QueueRow({ item, onRemoved = () => {} }: Props) {
   return (
     // Fixed height in every state so the list never jumps when a status changes.
     <li
+      data-id={item.id}
+      style={style}
       className="relative flex h-18 items-center gap-3 px-3"
       onFocus={(e) => {
         const p = e.currentTarget.querySelector('[data-title]')

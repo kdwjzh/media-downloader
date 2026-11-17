@@ -4,7 +4,7 @@
 
 ## 版面
 
-由上到下三塊：網址列（固定）→ 預覽區塊（有預覽時才出現）→ 佇列（佔滿剩下的高度，自己捲動）。
+由上到下三塊：網址列（固定）→ 預覽區塊（有預覽時才出現）→ 佇列（佔滿剩下的高度，自己捲動）。查到的是播放列表或頻道時，預覽區塊和佇列換成勾選畫面（`pages/playlist.md`），網址列還在。
 
 ```
 │ 影片或播放列表網址                                           │
@@ -44,11 +44,10 @@
 
 | 狀態 | 顯示 |
 |---|---|
-| 查詢中 | 縮圖與兩行文字的骨架佔位、「正在查詢影片資訊…」、網址（太長時在中間換行，不撐破版面）。`aria-busy="true"` |
+| 查詢中 | 縮圖與兩行文字的骨架佔位、「正在查詢影片資訊…」、網址（太長時在中間換行，不撐破版面）。`aria-busy="true"`。超過 5 秒多一行 `preview.slow`（見 `pages/playlist.md`「查詢很久的時候」） |
 | 查到了 | 縮圖、標題（最多兩行）、頻道、時長、格式切換、音質或畫質選單、預估大小、主按鈕「加入佇列」。焦點移到「加入佇列」 |
 | 查詢失敗 | 淡磚紅底；警告圖示、錯誤 title、hint、網址。可重試的錯誤有「重試」；未知錯誤另有「開啟記錄檔」。`role="alert"` |
 | 是直播 | 同查詢失敗的樣式，用 `error.liveNotSupported` |
-| 是播放列表（4b 暫時的，4c 換成勾選畫面） | 白底；清單圖示、列表標題、`preview.playlistCount`、`preview.playlistPending`。只有 ✕ |
 
 查到了的細節：
 
@@ -69,13 +68,14 @@
 | 已查到 | 用當下選好的格式與音質／畫質自動加入佇列，然後預覽新的 |
 | 還在查詢中 | 也加入佇列，以「正在查詢影片資訊…」的狀態顯示，查到後自動開始；查詢失敗時錯誤顯示在佇列的那一列 |
 | 查詢失敗 | 直接換成新的，不進佇列 |
-| 是播放列表（4b） | 直接換成新的，不進佇列 |
+| 是播放列表的勾選畫面 | 直接換成新的，不進佇列（2026-11-17 決定） |
 
 自動加入時在 `aria-live` 區域宣告 `queue.autoAdded`。
 
 ## 佇列
 
-- 標題「佇列（N）」，N 是全部項目數。右側「清除已結束的」只在有完成、失敗或已取消的項目時顯示。
+- 標題「佇列（N）」，N 是全部項目數。右側「取消全部」只在有還沒結束的項目時顯示；「清除已結束的」只在有完成、失敗或已取消的項目時顯示。
+- 超過 100 列時用虛擬清單（MASTER「清單的列」）。
 - 新項目加在最下面。同時下載數以外的項目顯示「等待中」。
 - 列的版型見 MASTER 第 6 節。各狀態的內容：
 
@@ -98,6 +98,7 @@
 - 總大小未知時省略「/ 總大小」和「剩餘時間」，只顯示已下載大小與速度。
 - ✕ 只出現在已結束的項目，名稱是「從佇列移除」。進行中的項目只有「取消」。
 - 「清除已結束的」與 ✕ 只把項目從畫面移除，不刪檔案，所以不需要確認。移除後焦點移到「佇列（N）」標題。
+- 「取消全部」（2026-11-17 決定加入）：先跳確認視窗（`cancelAll.title`、`cancelAll.body`；「繼續下載」是預設焦點，「取消全部」是磚紅按鈕）。確定後對每個還沒結束的項目叫一次 `cancel_task`，等待中的先、進行中的後，一起送出。做完焦點移到「佇列（N）」標題。不朗讀（使用者自己按的）。
 - 開啟資料夾：選中檔案時不顯示任何東西；改開資料夾時 toast `toast.openedFolder`；什麼都沒開（或指令失敗）時 toast `toast.notFound`。
 - 標題被截斷時：焦點在那一列的任何按鈕上，標題全文浮在那一列的文字欄上方（白底、邊框紫灰、最多三行、圖層 20），不改變列高。螢幕閱讀器從按鈕的 `aria-label` 聽得到全文。
 
@@ -153,7 +154,10 @@
 | `preview.loading` | 正在查詢影片資訊… | Looking up video info… |
 | `preview.close` | 關閉預覽 | Close preview |
 | `preview.note4k` | 4K 使用 VP9 編碼，部分播放器可能無法播放。 | 4K uses VP9, which some players can't play. |
-| `queue.title` | 佇列（{{count}}） | Queue ({{count}}) |
+| `queue.title` | 佇列（{{count}}） | Queue ({{count}})（有千分位） |
+| `queue.cancelAll` | 取消全部 | Cancel all |
+| `cancelAll.title` | 要取消 {{count}} 個還沒完成的項目嗎？ | {{count}} item(s) haven't finished. Cancel them all?（分單複數） |
+| `cancelAll.body` | 進行中與等待中的項目會停止。已完成的檔案不受影響。取消的項目要逐一按「重新加入」才會再排。 | Items in progress or waiting will stop. Finished files stay where they are. Cancelled items have to be added again one by one. |
 | `queue.clearFinished` | 清除已結束的 | Clear finished |
 | `queue.emptyInline` | 佇列是空的 | The queue is empty |
 | `queue.autoAdded` | 已將上一個項目加入佇列 | Added the previous item to the queue |
@@ -174,8 +178,6 @@
 | `empty.title` | 貼上網址開始下載 | Paste a URL to start downloading |
 | `empty.body` | 複製 YouTube 影片或播放列表的網址，按 Ctrl+V 貼上。 | Copy the URL of a YouTube video or playlist, then press Ctrl+V. |
 | `preview.title` | 影片預覽 | Video preview |
-| `preview.playlistCount` | {{count}} 支影片 | {{count}} video(s)（分單複數） |
-| `preview.playlistPending` | 播放列表的勾選畫面還沒完成，目前請逐一貼上單支影片的網址。 | The playlist screen isn't ready yet. For now, paste the URL of each video on its own. |
 | `toast.openedFolder` | 找不到檔案，已改開它原本所在的資料夾。 | Couldn't find the file, so its folder was opened instead. |
 | `toast.notFound` | 找不到這個檔案和它所在的資料夾，可能已被移動或刪除。 | Couldn't find the file or its folder. It may have been moved or deleted. |
 | `toast.notUrl` | 剪貼簿裡的不是網址。 | The clipboard doesn't contain a URL. |

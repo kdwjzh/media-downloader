@@ -227,7 +227,7 @@ test('pasting over a found preview adds it with the choice on screen', async () 
   await flush()
   expect(api.addToQueue).toHaveBeenCalledWith(['https://youtu.be/one'], 'mp4', 720)
   expect(spoken()).toEqual(['queue.autoAdded'])
-  expect(usePreview.getState().preview).toEqual({ kind: 'loading', url: 'https://youtu.be/two' })
+  expect(usePreview.getState().preview).toEqual({ kind: 'loading', url: 'https://youtu.be/two', started: expect.any(Number) })
 })
 
 test('pasting over a preview still looking adds its URL alone, to be looked up in the queue', async () => {
@@ -237,7 +237,7 @@ test('pasting over a preview still looking adds its URL alone, to be looked up i
   void lookUp('https://youtu.be/two')
   await flush()
   expect(api.addToQueue).toHaveBeenCalledWith(['https://youtu.be/one'], 'mp4', 720)
-  expect(usePreview.getState().preview).toEqual({ kind: 'loading', url: 'https://youtu.be/two' })
+  expect(usePreview.getState().preview).toEqual({ kind: 'loading', url: 'https://youtu.be/two', started: expect.any(Number) })
 })
 
 test('pasting over a failed preview or a playlist only replaces it', async () => {

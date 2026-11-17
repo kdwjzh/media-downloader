@@ -239,6 +239,11 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 晚到的 `lookup` 結果靠查詢編號丟掉；新的查詢、關閉預覽、加入佇列都要讓編號前進。
 - 元件測試用 jsdom（檔案開頭 `// @vitest-environment jsdom`），用假的 `window.pywebview.api` 測真的 `api/` 與 stores。jsdom 沒有 `<dialog>` 的 `showModal()`，測試裡自己補。
 - pywebview 視窗的寬高含標題列與外框：960x680 的網頁實際約 947x645，720x520 約 707x485。
+- 超過 100 列的清單用 `frontend/src/virtual.ts`（列高固定），不另外加套件；有焦點的那一列要傳給它保留，否則捲走時焦點會掉。依據見 `docs/decisions/0014`。
+- 一次對很多項目叫橋接層時一起送出（`Promise.all`），不要一個等一個：一次往返約 0.1 秒，93 個要 9.8 秒。
+- 每個 `cancel_task` 各送一個事件，事件一個一個送進網頁（約 17 ms 一個）：幾千個項目的畫面要等很久才更新完，見 `0014` 的代價。
+- 關著的 `<dialog>` 還在 DOM 裡：測試找確認視窗裡的按鈕要用 `within(dialog)`，用文字找按鈕時要排除 `dialog` 裡的。
+- 可能上千的數量在語言檔寫 `{{count, number}}`（千分位）。
 
 視覺決策：
 

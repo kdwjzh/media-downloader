@@ -18,6 +18,7 @@
     "audioLabel": "音質",
     "videoLabel": "畫質",
     "kbps": "{{n}} kbps",
+    "upTo": "最高 {{n}}p",
     "exact": "{{n}}p"
   },
   "size": {
@@ -42,15 +43,14 @@
     "loading": "正在查詢影片資訊…",
     "close": "關閉預覽",
     "note4k": "4K 使用 VP9 編碼，部分播放器可能無法播放。",
-    "playlistPending": "播放列表的勾選畫面還沒完成，目前請逐一貼上單支影片的網址。",
     "title": "影片預覽",
-    "playlistCount_one": "{{count}} 支影片",
-    "playlistCount_other": "{{count}} 支影片"
+    "slow": "已查詢 {{n}} 秒。播放列表或頻道的影片很多時，要等比較久。"
   },
   "queue": {
-    "title": "佇列（{{count}}）",
+    "title": "佇列（{{count, number}}）",
     "clearFinished": "清除已結束的",
-    "emptyInline": "佇列是空的"
+    "emptyInline": "佇列是空的",
+    "cancelAll": "取消全部"
   },
   "status": {
     "queued": "等待中",
@@ -145,6 +145,25 @@
     "skipped": "檔案已存在，已略過：{{title}}",
     "failed": "下載失敗：{{title}}，{{reason}}",
     "retrying": "連線中斷，正在重試：{{title}}",
-    "removed": "已從佇列移除 {{count}} 個項目"
+    "removed": "已從佇列移除 {{count}} 個項目",
+    "addedMany_one": "已將 {{count, number}} 個項目加入佇列",
+    "addedMany_other": "已將 {{count, number}} 個項目加入佇列"
+  },
+  "playlist": {
+    "count_one": "{{count, number}} 支影片",
+    "count_other": "{{count, number}} 支影片",
+    "selectAll": "全選",
+    "selected": "已選 {{selected, number}} / {{total, number}}",
+    "unavailable": "無法下載",
+    "add_one": "將 {{count, number}} 個項目加入佇列",
+    "add_other": "將 {{count, number}} 個項目加入佇列",
+    "noneSelected": "至少勾選一個項目",
+    "close": "關閉播放列表",
+    "empty": "這個播放列表沒有影片"
+  },
+  "cancelAll": {
+    "title_one": "要取消 {{count, number}} 個還沒完成的項目嗎？",
+    "title_other": "要取消 {{count, number}} 個還沒完成的項目嗎？",
+    "body": "進行中與等待中的項目會停止。已完成的檔案不受影響。取消的項目要逐一按「重新加入」才會再排。"
   }
 }

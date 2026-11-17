@@ -1,14 +1,35 @@
-import { ListBullets, Warning, X } from '@phosphor-icons/react'
-import { useId } from 'react'
+import { Warning, X } from '@phosphor-icons/react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatBytes, formatDuration } from '../format'
 import { openLog } from '../stores/queue'
 import { addPreview, choose, closePreview, heightsOf, lookUp, resolve, usePreview } from '../stores/preview'
-import { type Format, MP3_BITRATES, type MediaInfo, RETRYABLE } from '../types'
+import { MP3_BITRATES, type MediaInfo, RETRYABLE } from '../types'
 import { Button } from './Button'
+import { FormatSwitch } from './FormatSwitch'
 import { Thumb } from './Thumb'
 
-const FORMATS: Format[] = ['mp3', 'mp4']
+// A long playlist or channel can take a minute (1,700 videos took 11 s): after this long a
+// line with the real seconds shows it is still going, even with the skeleton held still.
+export const SLOW_MS = 5000
+
+function StillLooking({ started }: { started: number }) {
+  const { t } = useTranslation()
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+  const ms = now - started
+  if (ms < SLOW_MS) return null
+  const text = t('preview.slow', { n: Math.floor(ms / 1000) })
+  // Not in the status line: a live region would read out every second.
+  return (
+    <p className="truncate text-xs text-text-muted tabular-nums" title={text}>
+      {text}
+    </p>
+  )
+}
 
 interface Props {
   /** The preview went away by the person's hand (added or closed): focus goes back to the URL box. */
@@ -36,33 +57,7 @@ function Ready({ info, onDone }: Props & { info: MediaInfo }) {
           <span>{formatDuration(info.durationSec)}</span>
         </p>
         <div className="mt-auto flex items-end gap-3">
-          <div className="flex flex-col gap-1">
-            <span id={`${id}-format`} className="text-xs text-text-muted">
-              {t('format.label')}
-            </span>
-            <div
-              role="radiogroup"
-              aria-labelledby={`${id}-format`}
-              className="flex h-9 items-center rounded-lg border border-border bg-surface p-0.5"
-            >
-              {FORMATS.map((f) => (
-                <label key={f} className="cursor-pointer has-disabled:cursor-not-allowed has-disabled:opacity-45">
-                  <input
-                    type="radio"
-                    name={`${id}-format`}
-                    className="peer sr-only"
-                    checked={format === f}
-                    // No picture, no MP4 (contract 2.3).
-                    disabled={f === 'mp4' && heights.length === 0}
-                    onChange={() => choose({ format: f })}
-                  />
-                  <span className="flex h-7.5 min-w-12 items-center justify-center rounded-md px-3 transition-colors duration-150 peer-checked:bg-accent peer-checked:text-on-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent peer-not-checked:peer-enabled:hover:bg-accent-soft">
-                    {t(`format.${f}`)}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <FormatSwitch value={format} onChange={(f) => choose({ format: f })} noVideo={heights.length === 0} />
           <div className="flex flex-col gap-1">
             <label htmlFor={`${id}-quality`} className="text-xs text-text-muted">
               {t(isAudio ? 'quality.audioLabel' : 'quality.videoLabel')}
@@ -102,7 +97,7 @@ export function PreviewPanel({ onDone }: Props) {
   const { t } = useTranslation()
   const preview = usePreview((s) => s.preview)
   const format = usePreview((s) => s.choice.format)
-  if (!preview) return null
+  if (!preview || preview.kind === 'playlist') return null // MainPage shows the tick list instead
   const isError = preview.kind === 'error'
   return (
     // Same height in every state, so the queue below moves only once.
@@ -120,25 +115,12 @@ export function PreviewPanel({ onDone }: Props) {
             <p role="status" className="mt-auto">
               {t('preview.loading')}
             </p>
+            <StillLooking started={preview.started} />
             <p className="line-clamp-2 text-xs wrap-anywhere text-text-muted">{preview.url}</p>
           </div>
         </>
       )}
       {preview.kind === 'ready' && <Ready info={preview.info} onDone={onDone} />}
-      {preview.kind === 'playlist' && (
-        <div className="flex min-w-0 flex-1 gap-3">
-          <ListBullets size={20} aria-hidden="true" className="shrink-0 text-text-muted" />
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <h2 className="line-clamp-2 pr-8 text-base font-medium" title={preview.playlist.title}>
-              {preview.playlist.title}
-            </h2>
-            <p className="text-xs text-text-muted tabular-nums">
-              {t('preview.playlistCount', { count: preview.playlist.entries.length })}
-            </p>
-            <p className="mt-auto">{t('preview.playlistPending')}</p>
-          </div>
-        </div>
-      )}
       {preview.kind === 'error' && (
         <div role="alert" className="flex min-w-0 flex-1 gap-3">
           <Warning size={20} aria-hidden="true" className="shrink-0 text-danger" />
