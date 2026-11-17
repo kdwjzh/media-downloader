@@ -54,6 +54,9 @@ export function HistoryRow({ entry, added, onDelete, style }: Props) {
             data-delete
             {...named('history.deleteEntry')}
             title={t('history.deleteEntry')}
+            // Focus moves to the next row's delete button, so a held Enter would delete row
+            // after row: only the first press counts.
+            onKeyDown={(e) => e.repeat && e.preventDefault()}
             onClick={onDelete}
           >
             <Trash size={16} aria-hidden="true" />

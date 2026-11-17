@@ -167,6 +167,15 @@ test('after a delete, focus goes to the delete button now in that place', async 
   expect(useNotices.getState().spoken.at(-1)).toMatchObject({ key: 'history.deleted', params: { title: 'Song 1' } })
 })
 
+test('holding Enter on delete deletes one entry, not every row focus lands on', async () => {
+  await openHistory()
+  const del = within(rowOf('h1')).getByRole('button', { name: /^Delete this entry: Song 1/ })
+  // jsdom never turns Enter into a click; in Chromium a keydown whose default is prevented
+  // does not activate the button. fireEvent returns false when the default was prevented.
+  expect(fireEvent.keyDown(del, { key: 'Enter' })).toBe(true)
+  expect(fireEvent.keyDown(del, { key: 'Enter', repeat: true })).toBe(false)
+})
+
 test('clear history asks first: cancel keeps everything, confirming clears', async () => {
   await openHistory()
   fireEvent.click(screen.getByRole('button', { name: 'Clear history' }))

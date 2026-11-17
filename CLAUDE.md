@@ -244,6 +244,7 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 事件一個一個送進網頁約 17 ms 一個，所以 `EventSender` 會把排在一起的 `tasksChanged` 合成一個送（`0014`）。介面處理 `tasksChanged` 不可以對每個任務掃整個佇列（用 Map）：一個事件可能帶幾千個任務。
 - 用滑鼠打開的確認視窗，Chromium 會把焦點給按鈕卻不畫焦點框（`:focus-visible` 看上一次是不是鍵盤）。`ConfirmDialog` 先 `blur()` 再 `focus({ focusVisible: true })`：`showModal()` 已經把焦點給了第一顆按鈕，對它再 `focus()` 不會有任何改變。jsdom 驗不到，要在真視窗用真的滑鼠點擊驗。
 - 關著的 `<dialog>` 還在 DOM 裡：測試找確認視窗裡的按鈕要用 `within(dialog)`，用文字找按鈕時要排除 `dialog` 裡的。
+- 動作後焦點會移到下一個同類按鈕的（歷史的刪除）要忽略按住不放產生的重複按鍵（`onKeyDown` 裡 `e.repeat` 時 `preventDefault()`），否則按住 Enter 會一路刪下去。不要用 `onkeydown` 屬性回傳 `false`：那會連第一下也擋掉。
 - 可能上千的數量在語言檔寫 `{{count, number}}`（千分位）。
 - 每個畫面都一直掛著，其他的用 `hidden` 藏起來（`stores/page.ts`）：切回來時預覽、勾選、捲動位置都還在。不要改成依畫面條件渲染，那樣切走就全部重來。依據見 `docs/decisions/0015`。
 - 焦點要移到「刪除後會出現在那裡的元素」時，在呼叫後端之前就記下目標：store 一改清單就重畫，等 `await` 回來再記會來不及。
