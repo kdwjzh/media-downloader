@@ -23,7 +23,11 @@ export function ConfirmDialog({ open, title, body, keepLabel, confirmLabel, onKe
     // showModal() traps focus, makes Esc cancel, and gives focus back when it closes.
     if (open && !dialog?.open) {
       dialog?.showModal()
-      keep.current?.focus()
+      // Opened by a mouse click, Chromium focuses it without a ring (MASTER: focus).
+      // showModal() has already focused this first button, and focusing it again changes
+      // nothing, so it lets go first.
+      keep.current?.blur()
+      keep.current?.focus({ focusVisible: true })
     }
     if (!open && dialog?.open) dialog.close()
   }, [open])

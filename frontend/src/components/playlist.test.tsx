@@ -326,6 +326,21 @@ test('cancel all asks first, then cancels the waiting tasks before the running o
   expect(py.cancel_task.mock.calls).toEqual([['t2'], ['t4'], ['t1']])
 })
 
+// Bug found in the author's 4c acceptance: opened by a mouse click, the dialog put focus on
+// "Keep downloading" but drew no ring, because Chromium shows :focus-visible after script
+// focus only when the last input was the keyboard. jsdom draws nothing, so the test checks
+// that the ring is asked for.
+test('the safe answer of a dialog opened by mouse still shows its focus ring', () => {
+  const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+  loadQueue([task(1, 'queued')])
+  render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel all' }))
+  const keep = within(screen.getByRole('dialog')).getByText('Keep downloading')
+  expect(focus.mock.contexts.at(-1)).toBe(keep)
+  expect(focus.mock.calls.at(-1)).toEqual([{ focusVisible: true }])
+  focus.mockRestore()
+})
+
 test('cancel all only shows while something is unfinished', () => {
   loadQueue([task(1, 'done'), task(2, 'cancelled')])
   render(<App />)
