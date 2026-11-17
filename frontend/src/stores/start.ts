@@ -1,5 +1,6 @@
 import { getQueue, getSettings, onEvent } from '../api'
 import type { DataEvent } from '../api'
+import { historyAdded } from './history'
 import { previewSettingsChanged } from './preview'
 import { loadQueue, taskProgress, tasksChanged, tasksRemoved } from './queue'
 import { setSettings } from './settings'
@@ -16,7 +17,7 @@ export function handle(event: DataEvent): void {
       setSettings(event.settings)
       return previewSettingsChanged(event.settings)
     case 'historyAdded':
-      return // the history screen (4d) listens for it
+      return historyAdded(event.entry)
   }
 }
 

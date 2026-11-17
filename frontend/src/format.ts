@@ -16,3 +16,8 @@ export function formatDuration(totalSec: number): string {
   const h = Math.floor(sec / 3600)
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`
 }
+
+/** A finished-at time (ISO 8601, UTC) as local time, the way the interface language writes it. */
+export function formatTime(iso: string, language: string): string {
+  return new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
+}

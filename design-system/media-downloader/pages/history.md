@@ -8,7 +8,7 @@
 │ 歷史紀錄                                           [清空紀錄]│
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ ┌────┐ （標題）                                 MP3      │ │
-│ │ │封面│ 9.2 MB　2026/11/13 14:20                          │ │
+│ │ │封面│ 2026年11月13日 下午2:20　9.2 MB　✓已加入佇列     │ │
 │ │ └────┘              [重新下載] [開啟資料夾]          🗑   │ │
 │ ├──────────────────────────────────────────────────────────┤ │
 ```
@@ -24,6 +24,16 @@
 - 「清空紀錄」要先確認。確認視窗的規則見 MASTER 第 6 節；危險按鈕的文字跟觸發它的按鈕相同。
 - 日期時間依介面語言的格式顯示（`Intl.DateTimeFormat`）。
 - 沒有搜尋（第一版不做）。
+
+4d 定的（依據見 `docs/decisions/0015`）：
+
+- 狀態列：完成時間在前，檔案大小與「已加入佇列」接在後面；放不下時換到第二行（列沒有進度條，那一行空著）。最小視窗的英文介面一定會換行。
+- 時間：`Intl.DateTimeFormat(語言, { dateStyle: 'medium', timeStyle: 'short' })`。
+- 第一次進畫面時載入一次；載入中不顯示清單與「清空紀錄」；載入失敗顯示 `history.loadFailed` 與「重試」。
+- 按過「重新下載」：那一列的狀態列加綠色勾與 `history.addedToQueue`，按鈕照樣能按；朗讀 `live.added`（帶標題）。紀錄不在了：toast `history.gone` 並拿掉那一列；失敗：toast `history.notAdded`。
+- 刪除這筆紀錄：焦點移到取代它位置那一列的刪除按鈕，最後一列就移到上一列，全部刪光移到「前往下載」。朗讀 `history.deleted`。
+- 清空後焦點移到「前往下載」。
+- 「清空紀錄」用危險的外框按鈕（白底、磚紅框與字，滑過淡磚紅底）。
 
 ## 空狀態
 
@@ -41,13 +51,18 @@
 |---|---|---|
 | `history.title` | 歷史紀錄 | History |
 | `history.downloadAgain` | 重新下載 | Download again |
-| `history.addedToQueue` | 已加入佇列 | Added to queue |
+| `history.addedToQueue` | 已加入佇列 | Queued |
 | `history.deleteEntry` | 刪除這筆紀錄 | Delete this entry |
 | `history.clear` | 清空紀錄 | Clear history |
-| `history.confirmTitle` | 清空全部 {{count}} 筆紀錄？ | Clear all {{count}} entries? |
+| `history.confirmTitle` | 清空全部 {{count, number}} 筆紀錄？ | Clear all {{count, number}} entries?（1 筆：Clear 1 entry?） |
 | `history.confirmBody` | 已下載的檔案不會被刪除。這個動作無法復原。 | Downloaded files won't be deleted. This can't be undone. |
 | `history.emptyTitle` | 還沒有下載紀錄 | No downloads yet |
 | `history.emptyBody` | 下載完成的檔案會列在這裡。 | Files you finish downloading will be listed here. |
 | `history.goToDownloads` | 前往下載 | Go to Downloads |
 
-開啟資料夾、取消用 MASTER 的共用文案。
+| `history.deleted` | 已刪除這筆紀錄：{{title}} | Deleted the entry: {{title}} |
+| `history.gone` | 這筆紀錄已經不在了。 | This entry no longer exists. |
+| `history.notAdded` | 沒有加入佇列，請再試一次。 | Couldn't add it to the queue. Try again. |
+| `history.loadFailed` | 無法讀取歷史紀錄。 | Couldn't read the history. |
+
+開啟資料夾、取消、重試用 MASTER 的共用文案；開啟資料夾的 toast 跟佇列相同。

@@ -4,7 +4,7 @@
 import { create } from 'zustand'
 import * as api from '../api'
 import type { QueueItem, TaskProgress, TaskStatus } from '../types'
-import { announce, showToast } from './notices'
+import { announce, showOpened } from './notices'
 
 export const FINISHED: ReadonlySet<TaskStatus> = new Set(['done', 'failed', 'cancelled'])
 
@@ -104,8 +104,5 @@ export async function clearFinished(): Promise<void> {
 
 export async function openFolder(id: string): Promise<void> {
   const reply = await api.openTaskFolder(id)
-  const opened = reply.ok ? reply.data.opened : 'none'
-  // Explorer showing the file is its own answer; the other two need a word.
-  if (opened === 'folder') showToast('toast.openedFolder')
-  if (opened === 'none') showToast('toast.notFound')
+  showOpened(reply.ok ? reply.data.opened : 'none')
 }

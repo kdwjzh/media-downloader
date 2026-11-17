@@ -1,11 +1,12 @@
 import { CheckCircle, Warning, X } from '@phosphor-icons/react'
-import { type CSSProperties, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { type TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import { formatBytes, formatDuration } from '../format'
 import { addAgain, cancel, openFolder, openLog, remove, retry } from '../stores/queue'
 import { type QueueItem, RETRYABLE } from '../types'
 import { Button } from './Button'
+import { useRowTitle } from './rowTitle'
 import { FormatTag, Thumb } from './Thumb'
 
 function ProgressBar({ percent, label }: { percent?: number; label: string }) {
@@ -169,36 +170,13 @@ interface Props {
 export function QueueRow({ item, onRemoved = () => {}, style }: Props) {
   const { t } = useTranslation()
   const title = item.title ?? item.url
-  // Keyboard users never see the title attribute: while focus is in a row whose title is
-  // cut off, the full title lies over the text column instead (design step 5).
-  const [fullTitle, setFullTitle] = useState(false)
+  const { rowProps, titleLine } = useRowTitle(title)
   return (
     // Fixed height in every state so the list never jumps when a status changes.
-    <li
-      data-id={item.id}
-      style={style}
-      className="relative flex h-18 items-center gap-3 px-3"
-      onFocus={(e) => {
-        const p = e.currentTarget.querySelector('[data-title]')
-        setFullTitle(!!p && p.scrollWidth > p.clientWidth)
-      }}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setFullTitle(false)
-      }}
-    >
+    <li data-id={item.id} style={style} className="relative flex h-18 items-center gap-3 px-3" {...rowProps}>
       <Thumb format={item.format} src={item.thumb} loading={item.status === 'fetching'} />
       <div className="relative flex min-w-0 flex-1 flex-col gap-1">
-        <p data-title className="truncate font-medium" title={title}>
-          {title}
-        </p>
-        {fullTitle && (
-          <p
-            aria-hidden="true"
-            className="absolute -inset-x-1 top-0 z-20 line-clamp-3 rounded-lg border border-border bg-surface px-1 font-medium wrap-anywhere"
-          >
-            {title}
-          </p>
-        )}
+        {titleLine}
         {item.status === 'failed' ? (
           // A failed row has no bar, so the message may use that space for a second
           // line: the hint is the next step and must not be cut off in a narrow window.

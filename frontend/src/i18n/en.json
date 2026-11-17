@@ -7,7 +7,9 @@
     "downloads": "Downloads",
     "history": "History",
     "settings": "Settings",
-    "updateAvailable": "Update available"
+    "updateAvailable": "Update available",
+    "unfinished_one": ", {{count, number}} not finished",
+    "unfinished_other": ", {{count, number}} not finished"
   },
   "format": {
     "label": "Format",
@@ -165,5 +167,22 @@
     "title_one": "{{count, number}} item hasn't finished. Cancel it?",
     "title_other": "{{count, number}} items haven't finished. Cancel them all?",
     "body": "Items in progress or waiting will stop. Finished files stay where they are. Cancelled items have to be added again one by one."
+  },
+  "history": {
+    "title": "History",
+    "downloadAgain": "Download again",
+    "addedToQueue": "Queued",
+    "deleteEntry": "Delete this entry",
+    "clear": "Clear history",
+    "confirmTitle_one": "Clear {{count, number}} entry?",
+    "confirmTitle_other": "Clear all {{count, number}} entries?",
+    "confirmBody": "Downloaded files won't be deleted. This can't be undone.",
+    "emptyTitle": "No downloads yet",
+    "emptyBody": "Files you finish downloading will be listed here.",
+    "goToDownloads": "Go to Downloads",
+    "deleted": "Deleted the entry: {{title}}",
+    "gone": "This entry no longer exists.",
+    "notAdded": "Couldn't add it to the queue. Try again.",
+    "loadFailed": "Couldn't read the history."
   }
 }

@@ -9,6 +9,9 @@ const variants = {
   secondary:
     'h-8 min-w-16 rounded-lg border border-border bg-surface px-3 text-text enabled:hover:bg-accent-soft',
   text: 'h-8 rounded-lg px-2 text-accent enabled:hover:bg-accent-soft',
+  // "Clear history" outside the dialog (MASTER: buttons).
+  dangerOutline:
+    'h-8 min-w-16 rounded-lg border border-danger bg-surface px-3 text-danger enabled:hover:bg-danger-soft',
   // Inside a confirmation dialog only (MASTER: buttons).
   danger: 'h-8 min-w-16 rounded-lg bg-danger px-3 text-on-accent enabled:hover:bg-danger/90',
   icon: 'size-7 rounded-lg text-text-muted enabled:hover:bg-accent-soft enabled:hover:text-text',

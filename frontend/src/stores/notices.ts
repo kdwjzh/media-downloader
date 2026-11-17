@@ -29,6 +29,12 @@ export function hideToast(id: number): void {
   if (useNotices.getState().toast?.id === id) useNotices.setState({ toast: undefined })
 }
 
+/** After "Open folder": Explorer showing the file is its own answer; the other two need a word. */
+export function showOpened(opened: 'file' | 'folder' | 'none'): void {
+  if (opened === 'folder') showToast('toast.openedFolder')
+  if (opened === 'none') showToast('toast.notFound')
+}
+
 /** Read out by the polite live region. Only the last few stay in the page. */
 export function announce(key: string, params?: Notice['params']): void {
   useNotices.setState((s) => ({ spoken: [...s.spoken, { id: ++next, key, params }].slice(-KEEP_SPOKEN) }))

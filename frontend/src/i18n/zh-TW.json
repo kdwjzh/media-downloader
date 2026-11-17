@@ -7,7 +7,9 @@
     "downloads": "下載",
     "history": "歷史紀錄",
     "settings": "設定",
-    "updateAvailable": "有新版"
+    "updateAvailable": "有新版",
+    "unfinished_one": "，{{count, number}} 個還沒完成",
+    "unfinished_other": "，{{count, number}} 個還沒完成"
   },
   "format": {
     "label": "格式",
@@ -165,5 +167,22 @@
     "title_one": "要取消 {{count, number}} 個還沒完成的項目嗎？",
     "title_other": "要取消 {{count, number}} 個還沒完成的項目嗎？",
     "body": "進行中與等待中的項目會停止。已完成的檔案不受影響。取消的項目要逐一按「重新加入」才會再排。"
+  },
+  "history": {
+    "title": "歷史紀錄",
+    "downloadAgain": "重新下載",
+    "addedToQueue": "已加入佇列",
+    "deleteEntry": "刪除這筆紀錄",
+    "clear": "清空紀錄",
+    "confirmTitle_one": "清空全部 {{count, number}} 筆紀錄？",
+    "confirmTitle_other": "清空全部 {{count, number}} 筆紀錄？",
+    "confirmBody": "已下載的檔案不會被刪除。這個動作無法復原。",
+    "emptyTitle": "還沒有下載紀錄",
+    "emptyBody": "下載完成的檔案會列在這裡。",
+    "goToDownloads": "前往下載",
+    "deleted": "已刪除這筆紀錄：{{title}}",
+    "gone": "這筆紀錄已經不在了。",
+    "notAdded": "沒有加入佇列，請再試一次。",
+    "loadFailed": "無法讀取歷史紀錄。"
   }
 }

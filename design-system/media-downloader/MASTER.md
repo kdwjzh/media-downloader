@@ -99,6 +99,8 @@
 - 主要內容區內距 24。清單寬度跟著視窗；設定頁內容寬度上限 640。
 - 不出現水平捲軸。只有清單本身可以垂直捲動，頁面不另外捲。
 - App 有新版時，導覽列的「設定」旁出現一個梅紫圓點（附無障礙名稱「有新版」），不彈窗。
+- 導覽列的「下載」在佇列還有沒完成的項目時，右上角顯示數量（梅紫底白字、12px、字重 600、膠囊形，超過 99 顯示 99+）。數字本身 `aria-hidden`，按鈕的無障礙名稱另外帶「N 個還沒完成」，不做成朗讀區。
+- 切換畫面：每個畫面都一直掛著，其他的用 `hidden` 藏起來；焦點留在按下的導覽按鈕上（`docs/decisions/0015`）。
 
 ## 6. 元件
 
@@ -236,6 +238,7 @@
 | `nav.history` | 歷史紀錄 | History |
 | `nav.settings` | 設定 | Settings |
 | `nav.updateAvailable` | 有新版 | Update available |
+| `nav.unfinished` | ，{{count, number}} 個還沒完成 | , {{count, number}} not finished |
 | `format.mp3` | MP3 | MP3 |
 | `format.mp4` | MP4 | MP4 |
 | `format.label` | 格式 | Format |

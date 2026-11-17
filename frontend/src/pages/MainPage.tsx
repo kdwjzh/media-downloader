@@ -5,8 +5,10 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { PlaylistPanel } from '../components/PlaylistPanel'
 import { PreviewPanel } from '../components/PreviewPanel'
 import { QueueList } from '../components/QueueList'
+import { Sleeves } from '../components/Sleeves'
 import { isOtherTextField, looksLikeUrl } from '../paste'
 import { showToast } from '../stores/notices'
+import { goToUrlBox, usePage } from '../stores/page'
 import { lookUp, usePreview } from '../stores/preview'
 import { FINISHED, cancelAll, clearFinished, useQueue } from '../stores/queue'
 
@@ -14,12 +16,7 @@ function EmptyState() {
   const { t } = useTranslation()
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-      {/* Three stacked sleeves, drawn with CSS. Decorative and static. */}
-      <div aria-hidden="true" className="relative mb-4 h-20 w-28">
-        <div className="absolute top-2 left-0 size-16 -rotate-6 rounded-md bg-accent-soft" />
-        <div className="absolute top-0 left-6 size-16 rotate-3 rounded-md bg-highlight" />
-        <div className="absolute top-3 left-12 size-16 rounded-md bg-accent" />
-      </div>
+      <Sleeves />
       <h2 className="text-base font-medium">{t('empty.title')}</h2>
       <p className="max-w-md text-text-muted">{t('empty.body')}</p>
     </div>
@@ -57,11 +54,19 @@ export function MainPage() {
         return
       }
       e.preventDefault()
+      // From another screen: back here first, where the preview will show.
+      if (usePage.getState().page !== 'downloads') goToUrlBox()
       submit(text)
     }
     document.addEventListener('paste', onPaste)
     return () => document.removeEventListener('paste', onPaste)
   }, [])
+
+  // "Go to Downloads" and a paste on another screen land in the URL box.
+  const urlFocus = usePage((s) => s.urlFocus)
+  useEffect(() => {
+    if (urlFocus > 0) urlBox.current?.focus()
+  }, [urlFocus])
 
   const focusQueue = () => queueHeading.current?.focus()
   const focusUrl = () => urlBox.current?.focus()
