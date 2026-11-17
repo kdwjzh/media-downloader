@@ -129,6 +129,37 @@ def test_emit_returns_at_once_while_the_page_is_slow(page: Page, sender: EventSe
     ]
 
 
+def changed(*tasks: tuple[str, TaskStatus]) -> TasksChanged:
+    return TasksChanged(tuple(QueueItem(i, "u", Format.MP3, 320, status) for i, status in tasks))
+
+
+def test_task_changes_waiting_behind_one_another_go_as_one(page: Page, sender: EventSender) -> None:
+    # Cancel all on 5,339 tasks sent 5,339 events, one at a time: 93 s before the page
+    # showed them all (stage 4c). Whatever piles up while the page is busy goes together.
+    page.hold.clear()
+    sender.emit(removed("first"))
+    assert page.entered.wait(WAIT)  # the page is busy with it; the rest wait in line
+    sender.emit(changed(("a", TaskStatus.QUEUED)))
+    sender.emit(changed(("b", TaskStatus.QUEUED)))
+    sender.emit(changed(("a", TaskStatus.CANCELLED)))
+    sender.emit(removed("x"))  # another kind keeps its place: no merging across it
+    sender.emit(changed(("c", TaskStatus.QUEUED)))
+    sender.emit(changed(("b", TaskStatus.CANCELLED)))
+    page.hold.set()
+
+    def statuses(got: object) -> list[tuple[str, str]]:
+        assert isinstance(got, dict) and got["type"] == "tasksChanged", got
+        return [(t["id"], t["status"]) for t in got["tasks"]]
+
+    assert page.next() == {"type": "tasksRemoved", "ids": ["first"]}
+    # Each id once, where it first appeared, with its latest state: the page ends up
+    # exactly where the separate events would have left it.
+    assert statuses(page.next()) == [("a", "cancelled"), ("b", "queued")]
+    assert page.next() == {"type": "tasksRemoved", "ids": ["x"]}
+    assert statuses(page.next()) == [("c", "queued"), ("b", "cancelled")]
+    assert page.got.empty()
+
+
 def test_events_from_several_threads_reach_the_page_one_at_a_time(
     page: Page, sender: EventSender
 ) -> None:

@@ -12,6 +12,7 @@ import threading
 from collections.abc import Callable
 
 from app.bridge import shapes
+from app.services.queue import TasksChanged
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class EventSender:
         self._run_js = run_js
         self._close_window = close_window
         self._events: queue.SimpleQueue[shapes.Event | None] = queue.SimpleQueue()
+        self._held: list[shapes.Event | None] = []  # taken off the queue while merging; goes next
         self._closing = threading.Event()
         self._thread = threading.Thread(target=self._send_all, name="bridge-events", daemon=True)
 
@@ -51,8 +53,29 @@ class EventSender:
         self._closing.set()
         self._events.put(None)
 
+    def _next(self) -> shapes.Event | None:
+        """The next event to send. tasksChanged events already waiting right behind one
+        another go as one: each id once, where it first appeared, with its latest state, so the
+        page ends where the separate events would have left it (contract section 4). One at a
+        time, cancelling 5,339 tasks took 93 s to reach the page (stage 4c). Any other kind of
+        event stops the merge, so the order between kinds stays as it was."""
+        event = self._held.pop() if self._held else self._events.get()
+        if not isinstance(event, TasksChanged):
+            return event
+        tasks = {task.id: task for task in event.tasks}
+        while True:
+            try:
+                after = self._events.get_nowait()
+            except queue.Empty:
+                break
+            if not isinstance(after, TasksChanged):
+                self._held.append(after)
+                break
+            tasks.update((task.id, task) for task in after.tasks)  # a known id keeps its place
+        return TasksChanged(tuple(tasks.values()))
+
     def _send_all(self) -> None:
-        while (event := self._events.get()) is not None:
+        while (event := self._next()) is not None:
             if self._closing.is_set():
                 continue
             try:

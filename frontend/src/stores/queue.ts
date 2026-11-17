@@ -38,10 +38,11 @@ export function loadQueue(snapshot: QueueItem[]): void {
 export function tasksChanged(tasks: QueueItem[]): void {
   const { items, loaded } = useQueue.getState()
   const byId = new Map(tasks.map((task) => [task.id, task]))
-  const known = new Set(items.map((item) => item.id))
+  // A Map, not items.find(): one event can carry thousands of tasks (the bridge merges them).
+  const known = new Map(items.map((item) => [item.id, item]))
   for (const task of tasks) {
     if (!loaded) seenEarly.add(task.id)
-    const before = items.find((item) => item.id === task.id)
+    const before = known.get(task.id)
     if (before && before.status !== task.status) speak(task)
   }
   useQueue.setState({
