@@ -249,6 +249,10 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 每個畫面都一直掛著，其他的用 `hidden` 藏起來（`stores/page.ts`）：切回來時預覽、勾選、捲動位置都還在。不要改成依畫面條件渲染，那樣切走就全部重來。依據見 `docs/decisions/0015`。
 - 焦點要移到「刪除後會出現在那裡的元素」時，在呼叫後端之前就記下目標：store 一改清單就重畫，等 `await` 回來再記會來不及。
 - 列內的文字要在最小視窗（707 寬）的英文介面量過：歷史的列有三顆按鈕，標題欄只剩約 160 px。
+- 按下後要停用、焦點又還在它上面的按鈕（「檢查更新」）用 `aria-disabled` 加 `pointer-events-none`，不用 `disabled`：`disabled` 會讓焦點掉到頁面上。
+- 設定的控制項先照使用者選的改 store，再叫 `update_settings`（`stores/settings.ts` 的 `changeSettings`）：等回覆才改，單選按鈕會先跳回舊值。測試裡假的 `update_settings` 要記住之前的改動，不然每次回覆都把別的欄位改回預設。
+- `get_about` 第一次要開三個程式（約 1.5 秒），只在第一次進設定頁時叫；`update_engine` 更新成功後要再叫一次，後端更新後會忘掉版本（`0016`）。
+- 這個專案沒有 jest-dom：測試用 `.checked`、`.value`、`.textContent`、`getAttribute`，不要用 `toBeChecked()` 之類。
 
 視覺決策：
 

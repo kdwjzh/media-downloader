@@ -2,6 +2,7 @@ import { ClockCounterClockwise, DownloadSimple, GearSix } from '@phosphor-icons/
 import { useTranslation } from 'react-i18next'
 import { type Page, showPage, usePage } from '../stores/page'
 import { FINISHED, useQueue } from '../stores/queue'
+import { useUpdates } from '../stores/updates'
 
 const items = [
   { key: 'downloads', Icon: DownloadSimple },
@@ -9,13 +10,11 @@ const items = [
   { key: 'settings', Icon: GearSix },
 ] as const satisfies readonly { key: Page; Icon: unknown }[]
 
-interface Props {
-  updateAvailable?: boolean
-}
-
-export function NavRail({ updateAvailable = false }: Props) {
+export function NavRail() {
   const { t } = useTranslation()
   const current = usePage((s) => s.page)
+  // A state, not a notice: shown as long as a newer version exists (decisions/0016).
+  const updateAvailable = useUpdates((s) => s.latestVersion !== undefined)
   // Seen from any screen: downloads still running while the history is open (decisions/0015).
   const unfinished = useQueue((s) => s.items.filter((item) => !FINISHED.has(item.status)).length)
   return (
@@ -27,8 +26,7 @@ export function NavRail({ updateAvailable = false }: Props) {
             key={key}
             type="button"
             aria-current={active ? 'page' : undefined}
-            // shortcut: Settings does nothing until its screen exists, stage 4e.
-            onClick={key === 'settings' ? undefined : () => showPage(key)}
+            onClick={() => showPage(key)}
             className={`relative flex cursor-pointer flex-col items-center gap-1 rounded-lg py-2 text-xs transition-colors duration-150 ${
               active ? 'bg-accent-soft font-medium text-accent' : 'text-text-muted hover:bg-accent-soft hover:text-text'
             }`}

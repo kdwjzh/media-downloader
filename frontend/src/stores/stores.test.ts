@@ -14,6 +14,7 @@ const api = vi.hoisted(() => ({
   removeTask: vi.fn(),
   clearFinished: vi.fn(),
   openTaskFolder: vi.fn(),
+  checkAppUpdate: vi.fn(),
 }))
 vi.mock('../api', () => api)
 vi.mock('../i18n', () => ({ default: { language: 'zh-TW', changeLanguage: vi.fn() }, systemLanguage: () => 'zh-TW' }))
@@ -74,18 +75,20 @@ beforeEach(() => {
   useSettings.setState({ settings: undefined })
   useNotices.setState({ toast: undefined, spoken: [] })
   api.addToQueue.mockResolvedValue(ok({ taskIds: ['t'] }))
+  api.checkAppUpdate.mockResolvedValue(ok({ currentVersion: '0.1.0' }))
 })
 
 // ---- start and events
 
-test('start listens before it asks for the queue and the settings', () => {
+test('start listens before it asks for the queue, the settings and a newer app', () => {
   const order: string[] = []
   api.onEvent.mockImplementation(() => (order.push('onEvent'), () => {}))
   api.getQueue.mockImplementation(() => (order.push('getQueue'), new Promise(() => {})))
   api.getSettings.mockImplementation(() => (order.push('getSettings'), new Promise(() => {})))
+  api.checkAppUpdate.mockImplementation(() => (order.push('checkAppUpdate'), new Promise(() => {})))
   start()
   expect(order[0]).toBe('onEvent')
-  expect(order.slice(1).sort()).toEqual(['getQueue', 'getSettings'])
+  expect(order.slice(1).sort()).toEqual(['checkAppUpdate', 'getQueue', 'getSettings'])
 })
 
 test('events that arrive before getQueue answers win over the reply', async () => {

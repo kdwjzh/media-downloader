@@ -21,3 +21,13 @@ export function formatDuration(totalSec: number): string {
 export function formatTime(iso: string, language: string): string {
   return new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
 }
+
+/** A Windows path that does not fit loses its middle folders, keeping the drive and as many
+ *  of the last ones as fit; the last resort is the last folder alone. */
+export function shortenPath(path: string, fits: (text: string) => boolean): string {
+  const parts = path.split('\\')
+  const tries = [path]
+  for (let keep = parts.length - 2; keep >= 1; keep--) tries.push(`${parts[0]}\\…\\${parts.slice(-keep).join('\\')}`)
+  tries.push(`…\\${parts.at(-1)}`)
+  return tries.find(fits) ?? tries.at(-1)!
+}

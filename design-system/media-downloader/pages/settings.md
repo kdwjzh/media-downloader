@@ -33,17 +33,20 @@
 
 - 內容寬度上限 640，靠左。整頁可以垂直捲動（這是唯一讓頁面捲動的畫面）。
 - 五個區塊：下載、預設格式、介面、更新、關於。每個區塊是一個白底、圓角 10 的容器，區塊標題在容器上方（`<h2>`）。
-- 每一列是「標籤在左（寬 160）、控制項在右」。視窗窄到放不下時改成標籤在上。
-- **改了就生效，沒有儲存按鈕。**
-- 下載資料夾：顯示完整路徑，太長時從中間省略並用 `title` 屬性放完整路徑。「變更…」開啟系統的資料夾選擇視窗。
+- 每一列是「標籤在左（寬 160）、控制項在右」。最小視窗（網頁 707 寬）的英文介面也放得下，所以沒有「標籤在上」的窄版（`decisions/0016`）。例外是關於的元件清單：標籤在上、表格占整列寬。
+- **改了就生效，沒有儲存按鈕。** 控制項先照使用者選的顯示；存不進去時彈回後端的值，不另外說明。
+- 下載資料夾：顯示完整路徑，太長時從中間省略（保留磁碟與最後幾層）並用 `title` 屬性放完整路徑；鍵盤焦點在這一列時，完整路徑顯示在下方。「變更…」開啟系統的資料夾選擇視窗。
+  - 選到不能寫入的資料夾：那一列下方一行磚紅訊息加警告圖示（`role="alert"`），到下一次按「變更…」時清掉。
+  - 換成新資料夾、佇列還有沒完成的項目時 toast `settings.keptOldFolder`。按取消或選到同一個資料夾不說話。
 - 同時下載數：並排的單選按鈕。範圍來自一個常數（1–5，`frontend/src/types.ts` 的 `CONCURRENT_CHOICES`），預設選 3。
 - 檔名重複時：三個單選項。選「覆蓋」時下方顯示一行磚紅色的說明。
 - 預設格式：跟預覽區塊「記住上次用的」是同一組值，兩邊改任何一邊都會同步。
 - 語言：跟隨系統／繁體中文／English。語言名稱用該語言本身寫，不翻譯。
 - 更新：
-  - App 那一列只顯示目前版本。有新版時加上「有新版 x.y.z」與次要按鈕「前往下載」（開啟瀏覽器到發佈頁）。不自動下載、不彈窗。
-  - yt-dlp 那一列有「檢查更新」。按下後變成「檢查中…」並停用；結果顯示在同一列：「已是最新版」、「已更新到 x」或錯誤訊息加「重試」。
-- 關於：App 名稱與版本、授權 MIT、使用的元件與各自的授權（yt-dlp、FFmpeg、Deno、Noto Sans TC、Bricolage Grotesque）、「原始碼」連結、「開啟記錄檔資料夾」。
+  - App 那一列只顯示目前版本。有新版時加上「有新版 x.y.z」與次要按鈕「前往下載」（開啟瀏覽器到發佈頁）。不自動下載、不彈窗。導覽列的圓點一直顯示到沒有新版為止，看過設定頁也不消失。
+  - yt-dlp 那一列有「檢查更新」。按下後變成「檢查中…」並停用（`aria-disabled`，焦點留在按鈕上），下方一行「可能要二十秒左右」；結果顯示在那一列下方，到下一次檢查：「已是最新版」、「已更新到 x」、`network` 用 `settings.updateFailed`、其他用 `settings.updateFailedUnknown` 加「開啟記錄檔」。失敗時按鈕寫「重試」。
+- 版本（App、yt-dlp、元件清單）第一次進這個畫面才讀（約 1.5 秒），讀取中用骨架佔位。
+- 關於：App 名稱與版本、授權 MIT、使用的元件與各自的授權與版本（yt-dlp、FFmpeg、Deno、Noto Sans TC、Bricolage Grotesque）、「原始碼」、「開啟記錄檔資料夾」（兩顆次要按鈕）。
 
 ## 文案
 
@@ -79,5 +82,15 @@
 | `settings.components` | 使用的元件 | Third-party components |
 | `settings.sourceCode` | 原始碼 | Source code |
 | `settings.openLogFolder` | 開啟記錄檔資料夾 | Open log folder |
+| `settings.languageZhTW` | 繁體中文 | 繁體中文 |
+| `settings.languageEn` | English | English |
+| `settings.checkingSlow` | 可能要二十秒左右。 | This can take about 20 seconds. |
+| `settings.updateFailedUnknown` | 無法更新 yt-dlp。可以重試；如果還是不行，記錄檔裡有詳細資訊。 | Couldn't update yt-dlp. You can retry. The log file has details. |
+| `settings.appLicense` | {{version}}，MIT 授權 | {{version}}, MIT License |
+| `settings.componentName` | 名稱 | Name |
+| `settings.version` | 版本 | Version |
+| `settings.aboutFailed` | 無法讀取版本資訊。 | Couldn't read the version information. |
+| `settings.folderNotWritable` | 這個資料夾無法寫入，請選其他資料夾。 | This folder can't be written to. Choose another folder. |
+| `settings.keptOldFolder` | 已換成新的下載資料夾。佇列裡還沒完成的 {{count, number}} 個項目仍會存到原本的資料夾。 | Download folder changed. The {{count, number}} unfinished items in the queue still go to the old folder.（單數另有一句） |
 
-重試用 MASTER 的共用文案。
+最後十個是 4e 實作時加的（`decisions/0016`）。重試、開啟記錄檔用 MASTER 的共用文案。

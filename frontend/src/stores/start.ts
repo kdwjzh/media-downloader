@@ -4,6 +4,7 @@ import { historyAdded } from './history'
 import { previewSettingsChanged } from './preview'
 import { loadQueue, taskProgress, tasksChanged, tasksRemoved } from './queue'
 import { setSettings } from './settings'
+import { checkAppUpdate } from './updates'
 
 export function handle(event: DataEvent): void {
   switch (event.type) {
@@ -30,5 +31,6 @@ export function start(): () => void {
     setSettings(reply.data)
     previewSettingsChanged(reply.data)
   })
+  void checkAppUpdate()
   return stop
 }

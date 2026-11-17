@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { formatBytes, formatDuration } from './format'
+import { formatBytes, formatDuration, shortenPath } from './format'
 
 const MB = 1024 * 1024
 
@@ -14,4 +14,14 @@ test('formatDuration shows hours only when there are any', () => {
   expect(formatDuration(19)).toBe('0:19')
   expect(formatDuration(241)).toBe('4:01')
   expect(formatDuration(3600)).toBe('1:00:00')
+})
+
+test('a long path loses its middle folders first, then all but the last', () => {
+  const path = 'C:\\Users\\someone\\Music\\YouTube\\Lo-fi'
+  const upTo = (n: number) => (text: string) => text.length <= n
+  expect(shortenPath(path, upTo(99))).toBe(path)
+  expect(shortenPath(path, upTo(24))).toBe('C:\\…\\Music\\YouTube\\Lo-fi')
+  expect(shortenPath(path, upTo(10))).toBe('C:\\…\\Lo-fi')
+  expect(shortenPath(path, upTo(3))).toBe('…\\Lo-fi')
+  expect(shortenPath('D:\\Music', upTo(3))).toBe('…\\Music')
 })
