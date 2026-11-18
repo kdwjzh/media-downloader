@@ -53,7 +53,8 @@ export function PlaylistPanel({ playlist, onDone }: Props) {
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === ' ') {
       e.preventDefault()
-      toggle(active)
+      // A held Space would flip the tick back and forth; only the first press counts.
+      if (!e.repeat) toggle(active)
       return
     }
     const el = e.currentTarget

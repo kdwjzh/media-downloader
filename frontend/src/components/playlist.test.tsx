@@ -155,6 +155,21 @@ test('the list is one tab stop; arrows move, Space ticks, Home and End jump', ()
   expect(text()).toContain('3 of 4 selected')
 })
 
+test('holding Space ticks once; a held arrow still moves', () => {
+  show()
+  const list = listbox()
+  const active = () => document.getElementById(list.getAttribute('aria-activedescendant')!)
+  list.focus()
+  fireEvent.keyDown(list, { key: ' ' })
+  // Repeats of a held key: still no scrolling, but the tick stays as the first press left it.
+  expect(fireEvent.keyDown(list, { key: ' ', repeat: true })).toBe(false)
+  expect(active()?.getAttribute('aria-selected')).toBe('false')
+  fireEvent.keyDown(list, { key: ' ', repeat: true })
+  expect(active()?.getAttribute('aria-selected')).toBe('false')
+  fireEvent.keyDown(list, { key: 'ArrowDown', repeat: true })
+  expect(active()?.textContent).toContain('Song 2')
+})
+
 // ---- 10: adding
 
 test('adding sends the ticked URLs in the list order with the MP3 choice', async () => {
