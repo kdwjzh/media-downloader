@@ -193,7 +193,9 @@ export function QueueRow({ item, onRemoved = () => {}, style }: Props) {
       </div>
       <div className="flex shrink-0 flex-col items-end justify-between self-stretch py-2">
         <FormatTag format={item.format} />
-        <div className="flex items-center gap-1">
+        {/* Focus stays on the first button as it turns into the next action (Cancel → Add
+            again): a held Enter would flip it back and forth, so only the first press counts. */}
+        <div className="flex items-center gap-1" onKeyDown={(e) => e.repeat && e.preventDefault()}>
           <Actions item={item} title={title} onRemoved={onRemoved} />
         </div>
       </div>

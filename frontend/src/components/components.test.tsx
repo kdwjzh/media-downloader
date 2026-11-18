@@ -233,6 +233,17 @@ test.each<[string, QueueItem, string, QueueItem, string]>([
   expect(document.activeElement).toBe(screen.getByRole('button', { name: lands }))
 })
 
+test('holding Enter on a row button counts only the first press', async () => {
+  render(<App />)
+  await send({ type: 'tasksChanged', tasks: [item('downloading')] })
+  const button = screen.getByRole('button', { name: 'Cancel: A song' })
+  // fireEvent returns false when the default was prevented; in Chromium that stops Enter clicking.
+  expect(fireEvent.keyDown(button, { key: 'Enter' })).toBe(true)
+  await send({ type: 'tasksChanged', tasks: [item('cancelled')] })
+  // Same element, now "Add again": the held key must not add it back.
+  expect(fireEvent.keyDown(button, { key: 'Enter', repeat: true })).toBe(false)
+})
+
 test('a row changing status does not pull focus that is elsewhere', async () => {
   render(<App />)
   await send({ type: 'tasksChanged', tasks: [item('downloading')] })
