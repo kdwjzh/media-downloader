@@ -105,6 +105,7 @@ frontend/src/
   api/               唯一呼叫橋接層的地方
   pages/ components/ stores/ i18n/
 design-system/       UI 設計規範（MASTER.md 與 pages/）
+brand/               App 圖示（logo/、icons/、concepts/、guidelines.md）
 docs/                功能規格、架構、決策紀錄、技術驗證
 packaging/           PyInstaller 設定、安裝檔腳本
 scripts/             一鍵檢查、下載外部程式、開發用指令
@@ -272,3 +273,9 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 文字對比 4.5:1、可點擊區域夠大、焦點可見、尊重減少動態設定。
 - 按鈕文字說清楚動作，同一動作全流程用同一個詞。
 - 錯誤訊息說明哪裡錯、怎麼修；空畫面要引導下一步。
+
+### App 圖示
+
+- 顏色以 `design-system/media-downloader/MASTER.md` 為準。
+- 需要 App 圖示時一律用 `brand/` 裡的檔案（Windows 用 `brand/icons/app.ico`），不要重畫。
+- 只有作者明確要求做圖示或品牌相關的工作時，才用 logo-design。
