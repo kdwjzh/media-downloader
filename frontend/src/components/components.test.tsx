@@ -217,6 +217,31 @@ test('opening a folder that moved shows a toast', async () => {
   expect(text()).toContain("Couldn't find the file or its folder")
 })
 
+// ---- focus when a row's buttons are swapped for its new status
+
+test.each<[string, QueueItem, string, QueueItem, string]>([
+  ['cancel', item('downloading', { percent: 10 }), 'Cancel: A song', item('cancelled'), 'Add again: A song'],
+  ['retry', item('failed', { error: 'network' }), 'Retry: A song', item('queued'), 'Cancel: A song'],
+  ['add again', item('cancelled'), 'Add again: A song', item('queued'), 'Cancel: A song'],
+  ['a download ending by itself', item('downloading', { percent: 99 }), 'Cancel: A song', item('done'), 'Open folder: A song'],
+  ['a failure with no retry', item('downloading'), 'Cancel: A song', item('failed', { error: 'private' }), 'Remove from queue: A song'],
+])('after %s, focus stays in the row', async (_name, before, pressed, after, lands) => {
+  render(<App />)
+  await send({ type: 'tasksChanged', tasks: [before] })
+  screen.getByRole('button', { name: pressed }).focus()
+  await send({ type: 'tasksChanged', tasks: [after] })
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: lands }))
+})
+
+test('a row changing status does not pull focus that is elsewhere', async () => {
+  render(<App />)
+  await send({ type: 'tasksChanged', tasks: [item('downloading')] })
+  const box = screen.getByLabelText('Video or playlist URL')
+  box.focus()
+  await send({ type: 'tasksChanged', tasks: [item('done')] })
+  expect(document.activeElement).toBe(box)
+})
+
 // ---- Ctrl+V anywhere
 
 function paste(text: string, target: Element = document.body) {

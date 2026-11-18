@@ -102,8 +102,11 @@ function Actions({ item, title, onRemoved }: { item: QueueItem; title: string; o
   const { t } = useTranslation()
   // Several rows carry the same button; the title tells a screen reader which row.
   const named = (key: string) => ({ 'aria-label': `${t(key)}: ${title}` })
-  const removeButton = (
+  // The first button keeps one key in every status, so React keeps the same element
+  // and focus stays in the row when the buttons change with the status.
+  const removeButton = (key: string) => (
     <Button
+      key={key}
       variant="icon"
       {...named('action.remove')}
       title={t('action.remove')}
@@ -114,40 +117,34 @@ function Actions({ item, title, onRemoved }: { item: QueueItem; title: string; o
   )
   switch (item.status) {
     case 'done':
-      return (
-        <>
-          <Button {...named('action.openFolder')} onClick={() => void openFolder(item.id)}>
-            {t('action.openFolder')}
-          </Button>
-          {removeButton}
-        </>
-      )
+      return [
+        <Button key="first" {...named('action.openFolder')} onClick={() => void openFolder(item.id)}>
+          {t('action.openFolder')}
+        </Button>,
+        removeButton('second'),
+      ]
     case 'failed':
-      return (
-        <>
-          {RETRYABLE.has(item.error ?? 'unknown') && (
-            <Button {...named('action.retry')} onClick={() => void retry(item.id)}>
+      return RETRYABLE.has(item.error ?? 'unknown')
+        ? [
+            <Button key="first" {...named('action.retry')} onClick={() => void retry(item.id)}>
               {t('action.retry')}
-            </Button>
-          )}
-          {removeButton}
-        </>
-      )
+            </Button>,
+            removeButton('second'),
+          ]
+        : [removeButton('first')]
     case 'cancelled':
-      return (
-        <>
-          <Button {...named('action.addAgain')} onClick={() => void addAgain(item.id)}>
-            {t('action.addAgain')}
-          </Button>
-          {removeButton}
-        </>
-      )
+      return [
+        <Button key="first" {...named('action.addAgain')} onClick={() => void addAgain(item.id)}>
+          {t('action.addAgain')}
+        </Button>,
+        removeButton('second'),
+      ]
     default:
-      return (
-        <Button variant="text" {...named('action.cancel')} onClick={() => void cancel(item.id)}>
+      return [
+        <Button key="first" variant="text" {...named('action.cancel')} onClick={() => void cancel(item.id)}>
           {t('action.cancel')}
-        </Button>
-      )
+        </Button>,
+      ]
   }
 }
 
