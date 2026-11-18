@@ -300,6 +300,23 @@ test('a cut-off title over an error that fits shows the title alone', () => {
   }
 })
 
+test('the full-text overlay goes away when the list scrolls', () => {
+  // It floats outside the list so the list cannot clip it; so it cannot follow a scroll either.
+  const wide = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(500)
+  const box = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(160)
+  try {
+    row(item('downloading', { title: 'A very long title' }))
+    const overlay = () => [...document.querySelectorAll('p')].filter((p) => p.textContent === 'A very long title')
+    fireEvent.focus(screen.getByRole('button', { name: 'Cancel: A very long title' }))
+    expect(overlay()).toHaveLength(2)
+    fireEvent.scroll(document.querySelector('ul')!)
+    expect(overlay()).toHaveLength(1)
+  } finally {
+    wide.mockRestore()
+    box.mockRestore()
+  }
+})
+
 test('a row changing status does not pull focus that is elsewhere', async () => {
   render(<App />)
   await send({ type: 'tasksChanged', tasks: [item('downloading')] })
