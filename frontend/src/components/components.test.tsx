@@ -262,6 +262,26 @@ test('a cut-off title shows in full while focus is in its row, and goes when foc
   }
 })
 
+test('a cut-off error shows in full while focus is in its row', () => {
+  // The title fits; the two-line error does not.
+  const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(48)
+  const box = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(32)
+  try {
+    row(item('failed', { error: 'unknown' }))
+    const hint = "You can retry. The log file has details."
+    const shown = () => [...document.querySelectorAll('span')].filter((s) => s.textContent === hint)
+    expect(shown()).toHaveLength(1)
+    fireEvent.focus(screen.getByRole('button', { name: 'Retry: A song' }))
+    expect(shown()).toHaveLength(2)
+    // The log link sits under where the overlay would go: it must stay visible with focus on it.
+    fireEvent.focus(screen.getByRole('button', { name: 'Open log file' }))
+    expect(shown()).toHaveLength(1)
+  } finally {
+    tall.mockRestore()
+    box.mockRestore()
+  }
+})
+
 test('a row changing status does not pull focus that is elsewhere', async () => {
   render(<App />)
   await send({ type: 'tasksChanged', tasks: [item('downloading')] })

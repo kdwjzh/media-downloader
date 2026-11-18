@@ -46,6 +46,23 @@ function statusLabel(item: QueueItem, t: TFunction): string {
   return t(`status.${item.status}`, { percent: item.percent, n: item.attempt })
 }
 
+function failedText(item: QueueItem, t: TFunction): string {
+  const code = item.error ?? 'unknown'
+  return `${t('status.failed', { title: t(`error.${code}.title`) })} ${t(`error.${code}.hint`)}`
+}
+
+/** What happened (brick red) and the next step; also the full text over a cut-off row. */
+function FailedMessage({ item }: { item: QueueItem }) {
+  const { t } = useTranslation()
+  const code = item.error ?? 'unknown'
+  return (
+    <>
+      <span className="font-medium text-danger">{t('status.failed', { title: t(`error.${code}.title`) })}</span>{' '}
+      <span className="text-text">{t(`error.${code}.hint`)}</span>
+    </>
+  )
+}
+
 function Status({ item }: { item: QueueItem }) {
   const { t } = useTranslation()
   switch (item.status) {
@@ -73,13 +90,11 @@ function Status({ item }: { item: QueueItem }) {
       )
     case 'failed': {
       const code = item.error ?? 'unknown'
-      const title = t('status.failed', { title: t(`error.${code}.title`) })
-      const hint = t(`error.${code}.hint`)
       return (
         <>
           <Warning size={16} aria-hidden="true" className="shrink-0 self-start text-danger" />
-          <span className="line-clamp-2 whitespace-normal" title={`${title} ${hint}`}>
-            <span className="font-medium text-danger">{title}</span> <span className="text-text">{hint}</span>
+          <span data-detail className="line-clamp-2 whitespace-normal" title={failedText(item, t)}>
+            <FailedMessage item={item} />
           </span>
           {code === 'unknown' && (
             <button
@@ -167,7 +182,7 @@ interface Props {
 export function QueueRow({ item, onRemoved = () => {}, style }: Props) {
   const { t } = useTranslation()
   const title = item.title ?? item.url
-  const { rowProps, titleLine } = useRowTitle(title)
+  const { rowProps, titleLine } = useRowTitle(title, item.status === 'failed' && <FailedMessage item={item} />)
   return (
     // Fixed height in every state so the list never jumps when a status changes.
     <li data-id={item.id} style={style} className="relative flex h-18 items-center gap-3 px-3" {...rowProps}>
