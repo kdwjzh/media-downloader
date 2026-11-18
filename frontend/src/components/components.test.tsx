@@ -244,6 +244,24 @@ test('holding Enter on a row button counts only the first press', async () => {
   expect(fireEvent.keyDown(button, { key: 'Enter', repeat: true })).toBe(false)
 })
 
+test('a cut-off title shows in full while focus is in its row, and goes when focus leaves', () => {
+  // jsdom has no layout: make every title line report itself wider than its box.
+  const wide = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(500)
+  const box = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(160)
+  try {
+    row(item('downloading', { title: 'A very long title' }))
+    const overlay = () => [...document.querySelectorAll('p')].filter((p) => p.textContent === 'A very long title')
+    expect(overlay()).toHaveLength(1)
+    fireEvent.focus(screen.getByRole('button', { name: 'Cancel: A very long title' }))
+    expect(overlay()).toHaveLength(2)
+    fireEvent.blur(screen.getByRole('button', { name: 'Cancel: A very long title' }), { relatedTarget: document.body })
+    expect(overlay()).toHaveLength(1)
+  } finally {
+    wide.mockRestore()
+    box.mockRestore()
+  }
+})
+
 test('a row changing status does not pull focus that is elsewhere', async () => {
   render(<App />)
   await send({ type: 'tasksChanged', tasks: [item('downloading')] })
