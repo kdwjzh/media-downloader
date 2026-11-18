@@ -282,6 +282,24 @@ test('a cut-off error shows in full while focus is in its row', () => {
   }
 })
 
+test('a cut-off title over an error that fits shows the title alone', () => {
+  // Only the title is too wide; the error already shows in full, so repeating it would only
+  // make the overlay taller than the row (author's acceptance, 2026-11-18).
+  const wide = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(500)
+  const box = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(160)
+  try {
+    row(item('failed', { error: 'network', title: 'A very long title' }))
+    const hint = 'Check your internet connection, then retry.'
+    const shown = (t: string) => [...document.querySelectorAll('p, span')].filter((s) => s.textContent === t)
+    fireEvent.focus(screen.getByRole('button', { name: 'Retry: A very long title' }))
+    expect(shown('A very long title')).toHaveLength(2)
+    expect(shown(hint)).toHaveLength(1)
+  } finally {
+    wide.mockRestore()
+    box.mockRestore()
+  }
+})
+
 test('a row changing status does not pull focus that is elsewhere', async () => {
   render(<App />)
   await send({ type: 'tasksChanged', tasks: [item('downloading')] })
