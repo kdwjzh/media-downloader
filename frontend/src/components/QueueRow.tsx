@@ -92,8 +92,9 @@ function Status({ item }: { item: QueueItem }) {
       const code = item.error ?? 'unknown'
       return (
         <>
-          <Warning size={16} aria-hidden="true" className="shrink-0 self-start text-danger" />
           <span data-detail className="line-clamp-2 whitespace-normal" title={failedText(item, t)}>
+            {/* Inside the text so it sits on the first line whether the message takes one line or two. */}
+            <Warning size={16} aria-hidden="true" className="mr-1 inline align-text-bottom text-danger" />
             <FailedMessage item={item} />
           </span>
           {code === 'unknown' && (
