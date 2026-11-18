@@ -317,6 +317,27 @@ test('the full-text overlay goes away when the list scrolls', () => {
   }
 })
 
+test('the overlay is measured again when its row changes under the focus', async () => {
+  // Focus stays on the first button while the row changes (Cancel -> Retry): what is cut off
+  // and where the text column is must follow, or the overlay keeps the old row's shape
+  // (author's acceptance, 2026-11-18: it covered "Add again").
+  const wide = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(500)
+  const narrow = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(160)
+  const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(48)
+  const short = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(32)
+  try {
+    render(<App />)
+    await send({ type: 'tasksChanged', tasks: [item('downloading', { title: 'A very long title' })] })
+    const button = screen.getByRole('button', { name: 'Cancel: A very long title' })
+    act(() => button.focus())
+    await send({ type: 'tasksChanged', tasks: [item('failed', { error: 'unknown', title: 'A very long title' })] })
+    const hint = 'You can retry. The log file has details.'
+    expect([...document.querySelectorAll('span')].filter((s) => s.textContent === hint)).toHaveLength(2)
+  } finally {
+    for (const spy of [wide, narrow, tall, short]) spy.mockRestore()
+  }
+})
+
 test('a row changing status does not pull focus that is elsewhere', async () => {
   render(<App />)
   await send({ type: 'tasksChanged', tasks: [item('downloading')] })
