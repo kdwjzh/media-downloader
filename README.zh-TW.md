@@ -103,6 +103,12 @@ python scripts/fetch_binaries.py
 python scripts/check.py
 ```
 
+打包安裝檔（需要 Inno Setup 7；從乾淨的狀態重新建置，產出與 SHA-256 在 `packaging/output/`）：
+
+```bash
+python scripts/build_installer.py
+```
+
 ## 授權
 
 [MIT](LICENSE)

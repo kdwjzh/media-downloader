@@ -1,0 +1,23 @@
+FFmpeg in Media Downloader
+=========================
+
+Media Downloader ships ffmpeg.exe unchanged from this build:
+
+  Build:   ffmpeg-N-128251-g6d1bfd7609-win64-gpl
+  Release: https://github.com/yt-dlp/FFmpeg-Builds/releases/tag/autobuild-2026-10-31-18-18
+
+It is licensed under the GNU General Public License, version 3 or later
+(see FFmpeg-LICENSE.txt). Media Downloader runs it as a separate program.
+
+Corresponding source code
+-------------------------
+
+FFmpeg source, at the exact commit of this build:
+  https://github.com/FFmpeg/FFmpeg/tree/6d1bfd760916ab52814b950692d1c1635d29f3c7
+
+Build scripts, which name the source and version of every library linked into
+this build, at the commit the build was made from:
+  https://github.com/yt-dlp/FFmpeg-Builds/tree/5ece62897c650b863c1ddda7b6964845344aef2d
+
+If any of these links stops working, open an issue in the Media Downloader
+repository and the source will be provided.

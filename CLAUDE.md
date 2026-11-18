@@ -38,7 +38,7 @@ Claude Code 每次開工會自動讀。
 | 語言／框架 | 後端 Python 3.12+；介面 React + TypeScript + Vite + Tailwind | 下載邏輯留在 Python；介面用網頁技術才能套用 UI 設計流程。見 `docs/decisions/0001` |
 | 桌面外殼 | pywebview（Windows 上用 WebView2） | 單一程序、兩種語言，比 Tauri 好維護。見 `0002` |
 | 下載引擎 | 呼叫 yt-dlp 官方執行檔，搭配 Deno 與 FFmpeg；不 `import yt_dlp` | yt-dlp 可獨立更新、取消就是結束程序。見 `0003` |
-| 外部程式位置 | 安裝檔採「僅目前使用者」安裝到 `%LOCALAPPDATA%\Programs`，外部程式放在安裝資料夾 | yt-dlp 自我更新需要資料夾可寫入。見 `0005` |
+| 外部程式位置 | 安裝檔採「僅目前使用者」安裝到 `%LOCALAPPDATA%\Programs`；外部程式放共用資料夾 `%LOCALAPPDATA%\media-downloader\bin`（開發時是 repo 的 `bin\`） | App 更新（重跑安裝程式）不會把使用者更新過的 yt-dlp 換回舊版。見 `0018`（取代 `0005`） |
 | 介面狀態 | Zustand | 輕量，佇列狀態集中管理 |
 | 介面語言 | 繁體中文、英文，react-i18next，預設跟隨系統 | 給別人用 |
 | 視覺方向 | 「唱片封套」：梅紫主色，MP3 縮圖正方形、MP4 維持 16:9；規範在 `design-system/media-downloader/` | 特色來自「抓音樂」這個用途。見 `0006` |
@@ -216,6 +216,16 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
   - 傳給 yt-dlp 的網址要先過 `urls.check`（http/https、YouTube 的網域清單），並放在 `--` 之後。
   - 畫質用 `-S res:N,vcodec:h264,acodec:m4a` 加 `--merge-output-format mp4`，不用 `height<=N`（直式影片會選錯）。4K 沒有 H.264，會是 VP9 裝在 mp4 裡，不重新編碼。
 - 不隨 App 附 ffprobe：MP3 加封面、MP4 合併都不需要它。之後的功能需要時再加回來。
+
+### 打包與安裝檔（依據見 `docs/decisions/0018`）
+
+- 一鍵打包：`python scripts/build_installer.py`，從刪掉 `build/` 開始，產出在 `packaging/output/`（不進 git）。它會跑 `npm ci`，開發伺服器要先關掉。
+- 版本號只改 `backend/app/__init__.py` 的 `__version__` 和 `pyproject.toml`（`test_version.py` 擋不一致）；安裝檔的版本由打包腳本傳入，不寫死在 `installer.iss`。
+- `installer.iss` 裡 yt-dlp 那一行**不可以**加 `ignoreversion`：靠 Inno 比較版本，才不會把使用者更新過的換回舊版。FFmpeg、Deno 要加。
+- 打包後的資料檔在 `sys._MEIPASS`（`_internal\`）底下，不在 `__file__` 往上找得到的地方（`main.py` 的 `DIST_INDEX`）。
+- 換 FFmpeg 版本時，`fetch_binaries.py` 與 `packaging/licenses/FFmpeg-SOURCE.txt` 一起改（原始碼連結要指到實際附帶的那一版）。
+- `installer.iss` 有中文，存成 UTF-8 加 BOM。
+- `main.py` 建立的 mutex 名稱與 `installer.iss` 的 `AppMutex` 要一致。
 
 ### UI 工作流程（ui-ux-pro-max + frontend-design）
 
