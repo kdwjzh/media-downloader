@@ -4,8 +4,11 @@ Every download is checked against the SHA-256 published next to it before it is
 used. Existing files are kept; delete bin/ to fetch again.
 
 Run from anywhere:  python scripts/fetch_binaries.py
+Packaging uses:     python scripts/fetch_binaries.py --dest build/bin --no-ffprobe
+(the installer does not ship ffprobe: MP3 covers and MP4 merging do not need it)
 """
 
+import argparse
 import hashlib
 import re
 import sys
@@ -26,9 +29,12 @@ ALLOWED_HOSTS = {
 
 YTDLP = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26"
 DENO = "https://github.com/denoland/deno/releases/download/v2.9.8"
-# shortcut: this build only has a rolling "latest" tag, so the FFmpeg version is
-# not pinned; switch to a versioned source when packaging needs reproducibility.
-FFMPEG = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest"
+# A month-end build: FFmpeg-Builds deletes its daily builds after about two weeks but has
+# kept every month-end one. Its source is listed in packaging/licenses/FFmpeg-SOURCE.txt;
+# change both together.
+FFMPEG = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/autobuild-2026-10-31-18-18"
+FFMPEG_NAME = "ffmpeg-N-128251-g6d1bfd7609-win64-gpl"
+FFPROBE = f"{FFMPEG_NAME}/bin/ffprobe.exe"
 
 # (asset URL, checksum URL, {member inside the zip, or "" for a plain file: target name})
 ASSETS: list[tuple[str, str, dict[str, str]]] = [
@@ -39,12 +45,9 @@ ASSETS: list[tuple[str, str, dict[str, str]]] = [
         {"deno.exe": "deno.exe"},
     ),
     (
-        f"{FFMPEG}/ffmpeg-master-latest-win64-gpl.zip",
+        f"{FFMPEG}/{FFMPEG_NAME}.zip",
         f"{FFMPEG}/checksums.sha256",
-        {
-            "ffmpeg-master-latest-win64-gpl/bin/ffmpeg.exe": "ffmpeg.exe",
-            "ffmpeg-master-latest-win64-gpl/bin/ffprobe.exe": "ffprobe.exe",
-        },
+        {f"{FFMPEG_NAME}/bin/ffmpeg.exe": "ffmpeg.exe", FFPROBE: "ffprobe.exe"},
     ),
 ]
 
@@ -83,14 +86,14 @@ def download(url: str, target: Path) -> str:
     return digest.hexdigest()
 
 
-def fetch(url: str, checksum_url: str, members: dict[str, str]) -> None:
+def fetch(dest: Path, url: str, checksum_url: str, members: dict[str, str]) -> None:
     name = url.rsplit("/", 1)[1]
-    if all((DEST / target).exists() for target in members.values()):
-        print(f"skip  {name} (already in bin/)")
+    if all((dest / target).exists() for target in members.values()):
+        print(f"skip  {name} (already in {dest})")
         return
     with open_url(checksum_url) as response:
         expected = find_hash(response.read().decode("utf-8-sig", "replace"), name)
-    tmp = DEST / (name + ".download")
+    tmp = dest / (name + ".download")
     try:
         print(f"fetch {name}", flush=True)
         actual = download(url, tmp)
@@ -100,22 +103,29 @@ def fetch(url: str, checksum_url: str, members: dict[str, str]) -> None:
             )
         print(f"  sha256 ok {actual}")
         if "" in members:
-            tmp.replace(DEST / members[""])
+            tmp.replace(dest / members[""])
             return
         with zipfile.ZipFile(tmp) as archive:
             for member, target in members.items():
-                (DEST / target).write_bytes(archive.read(member))
+                (dest / target).write_bytes(archive.read(member))
     finally:
         tmp.unlink(missing_ok=True)
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dest", type=Path, default=DEST)
+    parser.add_argument("--no-ffprobe", action="store_true")
+    options = parser.parse_args()
+    dest: Path = options.dest
     assert find_hash(f"{'a' * 64}  other\n{'B' * 64} *x.exe\n", "x.exe") == "b" * 64
     assert find_hash(f"Hash : {'C' * 64}\r\nPath : C:\\a\\x.zip\r\n", "x.zip") == "c" * 64
-    DEST.mkdir(exist_ok=True)
+    dest.mkdir(parents=True, exist_ok=True)
     for url, checksum_url, members in ASSETS:
-        fetch(url, checksum_url, members)
-    for exe in sorted(DEST.glob("*.exe")):
+        if options.no_ffprobe:
+            members = {k: v for k, v in members.items() if k != FFPROBE}
+        fetch(dest, url, checksum_url, members)
+    for exe in sorted(dest.glob("*.exe")):
         print(f"{exe.stat().st_size:>12,}  {exe.name}")
     return 0
 
