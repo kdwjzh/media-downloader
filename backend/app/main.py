@@ -14,28 +14,53 @@ import webview
 from app.bridge.api import BridgeApi
 from app.bridge.events import EventSender
 from app.composition import build
+from app.infrastructure import binaries
 
 DEV_URL = "http://localhost:5173"
-DIST_INDEX = Path(__file__).resolve().parents[2] / "frontend" / "dist" / "index.html"
+FROZEN = getattr(sys, "frozen", False)
+# Packaged, the data files sit in PyInstaller's folder (_internal), not above this file.
+_ROOT = Path(getattr(sys, "_MEIPASS", "")) if FROZEN else Path(__file__).resolve().parents[2]
+DIST_INDEX = _ROOT / "frontend" / "dist" / "index.html"
+# The installer looks for this name and asks the user to close the app first (installer.iss).
+APP_MUTEX = "MediaDownloaderAppMutex"
 
 log = logging.getLogger(__name__)
 
 
+def show_error(message: str) -> None:
+    """There is no page to show the problem in. The only text the backend shows itself;
+    there is no language setting to follow yet, so it is in both languages."""
+    mb_iconerror = 0x10
+    ctypes.windll.user32.MessageBoxW(None, message, "Media Downloader", mb_iconerror)
+
+
 def fatal(error: Exception) -> None:
-    """The window could not be built, so there is no page to show the problem in. The only
-    text the backend shows itself; there is no language setting to follow yet."""
-    message = (
+    show_error(
         "Media Downloader 無法啟動。\nMedia Downloader could not start.\n\n"
         f"{type(error).__name__}: {error}"
     )
-    mb_iconerror = 0x10
-    ctypes.windll.user32.MessageBoxW(None, message, "Media Downloader", mb_iconerror)
+
+
+def missing_message(names: list[str]) -> str:
+    return (
+        f"找不到 {'、'.join(names)}，可能被防毒軟體移除了。請重新安裝 Media Downloader。\n\n"
+        f"{', '.join(names)} could not be found; antivirus software may have removed it. "
+        "Install Media Downloader again."
+    )
 
 
 def main() -> None:
     dev = "--dev" in sys.argv[1:]
     if not dev and not DIST_INDEX.is_file():
         sys.exit("frontend/dist not found: run `npm run build` in frontend/, or start with --dev")
+    if gone := binaries.missing():
+        if not FROZEN:
+            sys.exit(f"{', '.join(gone)} not in bin/: run python scripts/fetch_binaries.py")
+        show_error(missing_message(gone))  # reinstalling puts a missing program back
+        sys.exit(1)
+    if FROZEN:
+        # Held until the process ends; Windows closes it then.
+        ctypes.windll.kernel32.CreateMutexW(None, False, APP_MUTEX)
 
     # The bridge needs the window and the window needs the bridge: these look it up late.
     window: webview.Window | None = None

@@ -114,15 +114,6 @@ def test_binaries_in_development_are_in_the_repository_bin() -> None:
     assert binaries.deno() == repo / "bin" / "deno.exe"
 
 
-def test_binaries_when_packaged_are_next_to_the_app(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.setattr(sys, "executable", str(tmp_path / "Media Downloader.exe"))
-    assert binaries.yt_dlp() == tmp_path.resolve() / "bin" / "yt-dlp.exe"
-    assert binaries.deno().is_absolute()
-
-
 def test_run_returns_code_and_both_outputs_as_utf8() -> None:
     script = (
         "import sys; sys.stdout.buffer.write('歌'.encode());"

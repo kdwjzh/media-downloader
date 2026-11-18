@@ -5,16 +5,25 @@ import sys
 from pathlib import Path
 
 from app.infrastructure.process import run
+from app.infrastructure.storage import paths
 
 VERSION_TIMEOUT = 10
+NAMES = ("yt-dlp.exe", "ffmpeg.exe", "deno.exe")
 
 
 def bin_dir() -> Path:
     if getattr(sys, "frozen", False):
-        # Packaged: next to the app's own exe, in the per-user install folder (ADR 0005).
-        return Path(sys.executable).resolve().parent / "bin"
+        # Packaged: a folder the installer fills and app updates leave alone, so a yt-dlp
+        # the user updated is not put back to an older one (ADR 0018).
+        return paths.local_dir() / "bin"
     # Development: <repo>/bin, filled by scripts/fetch_binaries.py.
     return Path(__file__).resolve().parents[4] / "bin"
+
+
+def missing() -> list[str]:
+    """The programs that are not there, e.g. removed by antivirus software."""
+    folder = bin_dir()
+    return [name for name in NAMES if not (folder / name).is_file()]
 
 
 def yt_dlp() -> Path:
