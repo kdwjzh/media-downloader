@@ -45,7 +45,8 @@ Claude Code 每次開工會自動讀。
 | 字體與圖示 | Noto Sans TC、Bricolage Grotesque 隨 App 附帶（npm 套件），圖示用 Phosphor；不從網路載入 | 每台電腦看起來一樣，離線可用。見 `0006` |
 | 視窗 | 預設 960x680，最小 720x520，左側導覽 | 清單型畫面高度比寬度珍貴。見 `0006` |
 | 儲存 | 設定用 JSON、歷史紀錄用 SQLite（縮圖也存在裡面），放 `%APPDATA%`；記錄檔與新版檢查的結果放 `%LOCALAPPDATA%` | SQLite 是 Python 內建，之後好做搜尋。見 `0011` |
-| App 新版檢查 | 問 GitHub 的最新發佈，結果存 24 小時（查不到存 1 小時）；版本號是 `backend/app/__init__.py` 的 `__version__` | 不會每次啟動都連網路；打包後沒有 `pyproject.toml`。見 `0011` |
+| App 新版檢查 | 問 GitHub 的最新發佈，結果存 24 小時（查不到存 1 小時）；版本號是 `backend/app/__init__.py` 的 `__version__`，照語意化版本比較（`1.0.0-rc.1 < 1.0.0`） | 不會每次啟動都連網路；打包後沒有 `pyproject.toml`。見 `0011`、`0019` |
+| App 更新 | 設定頁「立即更新」：下載發佈裡的安裝檔、核對 `.sha256`、`/SILENT` 執行、App 關閉，裝完自動重開；yt-dlp 在打包後的 App 啟動時自動更新（一天一次） | 使用者不用自己下載安裝檔；yt-dlp 過時是最常壞的原因。見 `0019` |
 | 下載程序的管理 | 每個外部程式放進自己的 Windows Job Object；取消是結束整個 Job | App 被強制結束時下載也會一起結束。見 `0008` |
 | 檔名與重複檔 | 檔名只用標題；下載在任務的暫存資料夾完成，由引擎搬進下載資料夾時套用略過／覆蓋／自動改名 | 下載資料夾不會出現半成品，也不動使用者原本的檔案。見 `0009` |
 | MP3 封面 | 置中裁成正方形的 JPEG | 配合「唱片封套」的正方形縮圖 |
@@ -99,6 +100,7 @@ backend/app/
     process.py       啟動外部程式的唯一入口（Job Object）
     http.py          App 自己連網路的唯一入口
     thumbnails.py releases.py shell.py   歷史縮圖、最新發佈、用 Windows 開啟東西
+    app_installer.py   下載、核對、啟動 App 新版的安裝檔
   composition.py     把全部服務組起來（真的引擎、檔案、Windows）
 backend/tests/
 frontend/src/
@@ -125,9 +127,9 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 10. 引擎不直接碰 `DownloadTask`：它回報事件，由服務層套用到任務上。
 11. 成品路徑不交給介面；介面用任務編號或歷史紀錄編號叫後端開啟資料夾。
 12. `services/` 不 import `infrastructure/`：需要的東西在 `services/ports.py` 定義成介面，由 `composition.py` 接上真的實作。
-13. App 自己連網路只能經由 `infrastructure/http.py`（https、主機允許清單、不跟隨轉址、大小上限）。
+13. App 自己連網路只能經由 `infrastructure/http.py`（https、主機允許清單、轉址最多 5 次且每次重新檢查、大小上限）。
 
-介面與後端各有一份的常數（格式、音質、畫質、九種狀態、12 個錯誤代碼、可以重試的錯誤）在 `backend/app/domain/` 與 `frontend/src/types.ts`，要一起改。
+介面與後端各有一份的常數（格式、音質、畫質、九種狀態、13 個錯誤代碼、可以重試的錯誤）在 `backend/app/domain/` 與 `frontend/src/types.ts`，要一起改。
 狀態轉換表有三處要一致：`domain/task.py` 的 `TRANSITIONS`、約定第 6 節、`架構.md` 的狀態圖。
 
 新增檔案前先說明它屬於哪一層。需求看起來要打破上述規則時，停下來問。
@@ -220,12 +222,25 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 ### 打包與安裝檔（依據見 `docs/decisions/0018`）
 
 - 一鍵打包：`python scripts/build_installer.py`，從刪掉 `build/` 開始，產出在 `packaging/output/`（不進 git）。它會跑 `npm ci`，開發伺服器要先關掉。
-- 版本號只改 `backend/app/__init__.py` 的 `__version__` 和 `pyproject.toml`（`test_version.py` 擋不一致）；安裝檔的版本由打包腳本傳入，不寫死在 `installer.iss`。
+- 版本號只改 `backend/app/__init__.py` 的 `__version__` 和 `pyproject.toml`（`test_version.py` 擋不一致）；`uv run` 會跟著改 `backend/uv.lock` 的版本，一起 commit 或一起還原。安裝檔的版本由打包腳本傳入，不寫死在 `installer.iss`。
 - `installer.iss` 裡 yt-dlp 那一行**不可以**加 `ignoreversion`：靠 Inno 比較版本，才不會把使用者更新過的換回舊版。FFmpeg、Deno 要加。
 - 打包後的資料檔在 `sys._MEIPASS`（`_internal\`）底下，不在 `__file__` 往上找得到的地方（`main.py` 的 `DIST_INDEX`）。
 - 換 FFmpeg 版本時，`fetch_binaries.py` 與 `packaging/licenses/FFmpeg-SOURCE.txt` 一起改（原始碼連結要指到實際附帶的那一版）。
 - `installer.iss` 有中文，存成 UTF-8 加 BOM。
-- `main.py` 建立的 mutex 名稱與 `installer.iss` 的 `AppMutex` 要一致。
+- `main.py` 建立的 mutex 名稱與 `installer.iss` 的 `AppMutexName` 要一致。
+
+### App 更新（依據見 `docs/decisions/0019`）
+
+- 安裝檔與檢查碼的網址只由版本號組成（`releases.py`），版本號先過 `domain/version.py`。不要改成用 GitHub 回應裡的網址或檔名。
+- 檢查碼對不上、看不懂、下載不完整：一律不執行，刪掉下載的檔案。核對失敗的路徑不可以有「先執行再說」的例外。
+- 安裝程式用 `process.launch_detached()` 啟動，**不可以**用 `JobProcess`：App 一結束 Job 就會把安裝程式一起結束。
+- App 叫安裝程式時**不加** `/SUPPRESSMSGBOXES`：那會讓「請關閉 App」框的答案變成取消，安裝程式默默結束。
+- `installer.iss` 的 `AllowCancelDuringInstall=no` 不要拿掉：Inno 取消時不會還原被換掉的檔案與 `[InstallDelete]` 刪掉的 `_internal`，App 會開不起來。
+- 安裝程式等 App 結束的程式在 `InitializeSetup` 裡：Inno 在它之後只檢查一次 AppMutex。
+- 測試用的更新來源只能由 `build_installer.py --test-update-source` 打開（標記檔 `update-source-test`，三處名字一致）；`…-TEST.exe` 絕不上傳。`test_update_source.py` 擋。
+- `http.py` 允許 http 只有一個例外：測試來源的 `127.0.0.1`，而且要呼叫的人明確傳 `loopback_http=True`。
+- 下載安裝檔的主機清單用完整的名字，不要放 `githubusercontent.com`（`raw.githubusercontent.com` 是任何人的檔案）。
+- yt-dlp 的自動更新只在打包後執行（`main.py`）；開發時 `bin/` 的 yt-dlp 不能自己變。
 
 ### UI 工作流程（ui-ux-pro-max + frontend-design）
 
@@ -246,6 +261,7 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 清單裡重複出現的按鈕，`aria-label` 要帶項目標題。
 - 介面的狀態放 `frontend/src/stores/`（Zustand）；元件透過 stores 做事，stores 透過 `api/` 叫後端。`start()` 在 `main.tsx` 的 React 外面呼叫，畫面壞掉時事件也照常收。依據見 `docs/decisions/0013`。
 - 關閉確認（`ConfirmCloseDialog`）要放在主內容區的錯誤邊界**外面**，而且自己訂閱 `onCloseRequested`：它壞掉時不再訂閱，`api/` 才會直接關窗。不要把訂閱搬進 store，那樣畫面壞了視窗會關不掉。
+- 更新前的確認（`AppUpdateDialog`）也放在畫面外面：安裝檔可能在使用者看別的畫面時準備好，藏起來（`hidden`）的畫面裡的 `<dialog>` 不會出現。
 - 預覽「當下選的格式」放在 store 不放元件：連續貼網址時要用它自動加入。
 - 晚到的 `lookup` 結果靠查詢編號丟掉；新的查詢、關閉預覽、加入佇列都要讓編號前進。
 - 元件測試用 jsdom（檔案開頭 `// @vitest-environment jsdom`），用假的 `window.pywebview.api` 測真的 `api/` 與 stores。jsdom 沒有 `<dialog>` 的 `showModal()`，測試裡自己補。

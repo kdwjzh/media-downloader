@@ -174,9 +174,23 @@ class BridgeApi:
     # ---- updates and about
 
     def check_app_update(self) -> Reply:
+        return _run("check_app_update", lambda: shapes.to_json(self._backend.app_update.info()))
+
+    def start_app_update(self) -> Reply:
         return _run(
-            "check_app_update", lambda: shapes.to_json(self._backend.updates.check_app_update())
+            "start_app_update", lambda: shapes.to_json(self._backend.app_update.start())
         )
+
+    def cancel_app_update(self) -> Reply:
+        return _run("cancel_app_update", self._backend.app_update.cancel)
+
+    def install_app_update(self) -> Reply:
+        def work() -> None:
+            # The installer waits for this app to end; closing stops every download.
+            if self._backend.app_update.install():
+                self._close_now()
+
+        return _run("install_app_update", work)
 
     def update_engine(self) -> Reply:
         return _run("update_engine", lambda: shapes.to_json(self._backend.updates.update_engine()))

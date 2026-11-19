@@ -122,6 +122,10 @@
     "unknown": {
       "title": "Something unexpected went wrong",
       "hint": "You can retry. The log file has details."
+    },
+    "checksumMismatch": {
+      "title": "The downloaded file is damaged",
+      "hint": "It was deleted. Retry."
     }
   },
   "close": {
@@ -227,5 +231,23 @@
     "folderNotWritable": "This folder can't be written to. Choose another folder.",
     "keptOldFolder_one": "Download folder changed. The {{count, number}} unfinished item in the queue still goes to the old folder.",
     "keptOldFolder_other": "Download folder changed. The {{count, number}} unfinished items in the queue still go to the old folder."
+  },
+  "appUpdate": {
+    "updateNow": "Update now",
+    "installNow": "Install now",
+    "progressLabel": "Downloading the update",
+    "downloading": "Downloading the update: {{percent}}% ({{received}} of {{total}})",
+    "downloadingNoTotal": "Downloading the update ({{received}})",
+    "closesAfter": "Once it's downloaded and checked, the app closes, installs the new version and opens again.",
+    "verifying": "Checking the file…",
+    "ready": "The update is downloaded. Some downloads are still running: choose Install now when they're done.",
+    "installing": "Starting the installer. The app will close…",
+    "failedNetwork": "Couldn't download the update. Check your internet connection, then retry.",
+    "failedChecksum": "The downloaded file was incomplete or damaged, so it was deleted and nothing was installed. Retry, or get the update from the release page.",
+    "failedUnknown": "Couldn't update. You can retry. The log file has details.",
+    "confirmTitle_one": "Stop {{count, number}} download and update?",
+    "confirmTitle_other": "Stop {{count, number}} downloads and update?",
+    "confirmBody": "The app closes to update: running and waiting items stop and the queue isn't kept, so you'll need to add them again. Finished files aren't affected.",
+    "confirm": "Stop and update"
   }
 }

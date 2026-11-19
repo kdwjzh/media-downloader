@@ -20,7 +20,13 @@ from app.domain.media import FormatOption, MediaInfo, PlaylistEntry, PlaylistInf
 from app.domain.progress import Progress
 from app.domain.settings import Settings
 from app.services.queue import QueueItem
-from app.services.updates import AboutInfo, AppUpdateInfo, Component, EngineUpdateResult
+from app.services.updates import (
+    AboutInfo,
+    AppUpdateInfo,
+    AppUpdateStatus,
+    Component,
+    EngineUpdateResult,
+)
 
 FRONTEND = Path(__file__).resolve().parents[2] / "frontend" / "src"
 TYPES = (FRONTEND / "types.ts").read_text(encoding="utf-8")
@@ -65,6 +71,7 @@ def queue_item_fields() -> Fields:
         ("HistoryEntry", lambda: py_fields(HistoryEntry)),
         ("Settings", lambda: py_fields(Settings)),
         ("AppUpdateInfo", lambda: py_fields(AppUpdateInfo)),
+        ("AppUpdateStatus", lambda: py_fields(AppUpdateStatus)),
         ("EngineUpdateResult", lambda: py_fields(EngineUpdateResult)),
         ("Component", lambda: py_fields(Component)),
         ("AboutInfo", lambda: py_fields(AboutInfo)),

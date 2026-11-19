@@ -122,6 +122,10 @@
     "unknown": {
       "title": "下載時發生未預期的問題",
       "hint": "可以重試；如果還是不行，記錄檔裡有詳細資訊。"
+    },
+    "checksumMismatch": {
+      "title": "下載的檔案已損壞",
+      "hint": "檔案已經刪除，請重試。"
     }
   },
   "close": {
@@ -227,5 +231,23 @@
     "folderNotWritable": "這個資料夾無法寫入，請選其他資料夾。",
     "keptOldFolder_one": "已換成新的下載資料夾。佇列裡還沒完成的 {{count, number}} 個項目仍會存到原本的資料夾。",
     "keptOldFolder_other": "已換成新的下載資料夾。佇列裡還沒完成的 {{count, number}} 個項目仍會存到原本的資料夾。"
+  },
+  "appUpdate": {
+    "updateNow": "立即更新",
+    "installNow": "立即安裝",
+    "progressLabel": "下載更新",
+    "downloading": "下載更新中 {{percent}}%（{{received}} / {{total}}）",
+    "downloadingNoTotal": "下載更新中（{{received}}）",
+    "closesAfter": "下載並核對完成後，App 會關閉並安裝新版，裝好後自動重新開啟。",
+    "verifying": "正在核對檔案…",
+    "ready": "更新已下載。還有下載沒完成，可以等它們結束後再按「立即安裝」。",
+    "installing": "正在開啟安裝程式，App 即將關閉…",
+    "failedNetwork": "無法下載更新，請檢查網路連線後重試。",
+    "failedChecksum": "下載的檔案不完整或已損壞，已經刪除，沒有安裝。請重試；如果一直失敗，可以到發佈頁手動下載。",
+    "failedUnknown": "無法更新。可以重試；如果還是不行，記錄檔裡有詳細資訊。",
+    "confirmTitle_one": "要停止 {{count, number}} 個下載並更新嗎？",
+    "confirmTitle_other": "要停止 {{count, number}} 個下載並更新嗎？",
+    "confirmBody": "更新時 App 會關閉：進行中與等待中的項目會停止，佇列不會保留，下次要重新加入。已完成的檔案不受影響。",
+    "confirm": "停止並更新"
   }
 }

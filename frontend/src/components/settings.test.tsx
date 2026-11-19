@@ -3,15 +3,27 @@
 // stores, a fake window.pywebview.api. No Python.
 
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest'
 import type { AboutInfo, BackendEvent, QueueItem, Settings } from '../types'
 
 const COMMANDS = [
   'ping', 'lookup', 'add_to_queue', 'get_queue', 'get_settings', 'update_settings', 'choose_download_folder',
   'check_app_update', 'update_engine', 'get_about', 'open_log_file', 'open_log_folder', 'open_link', 'list_history',
+  'start_app_update', 'cancel_app_update', 'install_app_update',
 ]
 const py: Record<string, ReturnType<typeof vi.fn>> = Object.fromEntries(COMMANDS.map((name) => [name, vi.fn()]))
 window.pywebview = { api: py as never }
+
+beforeAll(() => {
+  // jsdom has no showModal (CLAUDE.md: UI rules).
+  HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+    this.open = true
+  }
+  HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+    this.open = false
+    this.dispatchEvent(new Event('close'))
+  }
+})
 
 const i18n = (await import('../i18n')).default
 const { default: App } = await import('../App')
@@ -199,18 +211,109 @@ test('a folder that cannot be written to says so under the row until the next tr
 
 // ---- a newer app
 
-test('a newer app: a dot on Settings and a line with Get the update; no dialog', async () => {
-  py.check_app_update.mockResolvedValue({ ok: true, data: { currentVersion: '0.1.0', latestVersion: '0.2.0' } })
+const NEWER = { ok: true, data: { currentVersion: '0.1.0', latestVersion: '0.2.0' } }
+const RUNNING: QueueItem = { id: 'a', url: 'https://youtu.be/a', format: 'mp3', quality: 320, status: 'downloading' }
+const appUpdate = (status: object) => send({ type: 'appUpdateChanged', status } as BackendEvent)
+const row = () => inPage().getByText('Version 0.2.0 is available').parentElement!.parentElement!
+
+async function newerApp() {
+  py.check_app_update.mockResolvedValue(NEWER)
+  py.start_app_update.mockResolvedValue({ ok: true, data: { stage: 'downloading', receivedBytes: 0 } })
   await checkAppUpdate()
   await openSettings()
+}
+
+test('a newer app: a dot on Settings and Update now; no dialog', async () => {
+  await newerApp()
   expect(within(nav('Settings')).getByRole('img', { name: 'Update available' })).toBeTruthy()
   expect(inPage().getByText('Version 0.2.0 is available')).toBeTruthy()
-  await click(inPage().getByRole('button', { name: 'Get the update' }))
-  expect(py.open_link).toHaveBeenCalledWith('releasePage')
+  expect(inPage().queryByRole('button', { name: 'Get the update' })).toBeNull()
   expect(document.querySelector('dialog[open]')).toBeNull()
   // A state, not a notice: still there after looking at the page (decisions/0016).
   fireEvent.click(nav('Downloads'))
   expect(within(nav('Settings')).getByRole('img', { name: 'Update available' })).toBeTruthy()
+})
+
+test('Update now shows the download, can be cancelled, and focus stays on the one button', async () => {
+  await newerApp()
+  const button = inPage().getByRole('button', { name: 'Update now' })
+  button.focus()
+  await click(button)
+  expect(py.start_app_update).toHaveBeenCalledTimes(1)
+  await appUpdate({ stage: 'downloading', receivedBytes: 50 * 1024 * 1024, totalBytes: 100 * 1024 * 1024 })
+  expect(within(row()).getByRole('progressbar').getAttribute('aria-valuenow')).toBe('50')
+  expect(row().textContent).toContain('Downloading the update: 50%')
+  expect(button.textContent).toBe('Cancel')
+  expect(document.activeElement).toBe(button)
+  await click(button)
+  expect(py.cancel_app_update).toHaveBeenCalledTimes(1)
+  await appUpdate({ stage: 'idle' })
+  expect(button.textContent).toBe('Update now')
+  expect(within(row()).queryByRole('progressbar')).toBeNull()
+})
+
+test('checking has no number; ready with nothing downloading installs at once', async () => {
+  await newerApp()
+  await click(inPage().getByRole('button', { name: 'Update now' }))
+  await appUpdate({ stage: 'verifying' })
+  expect(within(row()).getByRole('progressbar').getAttribute('aria-valuenow')).toBeNull()
+  expect(row().textContent).toContain('Checking the file')
+  await appUpdate({ stage: 'ready' })
+  expect(py.install_app_update).toHaveBeenCalledTimes(1)
+  expect(document.querySelector('dialog[open]')).toBeNull()
+  await appUpdate({ stage: 'installing' })
+  expect(row().textContent).toContain('Starting the installer')
+  expect(inPage().getByRole('button', { name: 'Install now' }).getAttribute('aria-disabled')).toBe('true')
+})
+
+test('ready while downloads run: asks first; Keep downloading leaves Install now for later', async () => {
+  await newerApp()
+  loadQueue([RUNNING])
+  await click(inPage().getByRole('button', { name: 'Update now' }))
+  await appUpdate({ stage: 'ready' })
+  const dialog = screen.getByRole('dialog', { name: 'Stop 1 download and update?' })
+  expect(py.install_app_update).not.toHaveBeenCalled()
+  await click(within(dialog).getByRole('button', { name: 'Keep downloading' }))
+  expect(py.install_app_update).not.toHaveBeenCalled()
+  expect(row().textContent).toContain('Some downloads are still running')
+  await click(inPage().getByRole('button', { name: 'Install now' }))
+  await click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Stop and update' }))
+  expect(py.install_app_update).toHaveBeenCalledTimes(1)
+})
+
+test.each([
+  ['checksumMismatch', 'incomplete or damaged', false],
+  ['network', 'Check your internet connection', false],
+  ['unknown', 'The log file has details', true],
+])('failed with %s: says why, offers Retry and the release page', async (error, text, log) => {
+  await newerApp()
+  await click(inPage().getByRole('button', { name: 'Update now' }))
+  await appUpdate({ stage: 'failed', error })
+  expect(row().textContent).toContain(text)
+  expect(within(row()).queryByRole('button', { name: 'Open log file' }) !== null).toBe(log)
+  expect(py.install_app_update).not.toHaveBeenCalled()
+  await click(inPage().getByRole('button', { name: 'Get the update' }))
+  expect(py.open_link).toHaveBeenCalledWith('releasePage')
+  await click(inPage().getByRole('button', { name: 'Retry' }))
+  expect(py.start_app_update).toHaveBeenCalledTimes(2)
+})
+
+test('a reloaded page picks up a ready update but does not install by itself', async () => {
+  py.check_app_update.mockResolvedValue({ ok: true, data: { ...NEWER.data, status: { stage: 'ready' } } })
+  await checkAppUpdate()
+  await openSettings()
+  expect(inPage().getByRole('button', { name: 'Install now' })).toBeTruthy()
+  expect(py.install_app_update).not.toHaveBeenCalled()
+})
+
+test('an installer that will not start leaves the app open with the reason', async () => {
+  await newerApp()
+  py.install_app_update.mockResolvedValue({ ok: false, error: 'checksumMismatch' })
+  await click(inPage().getByRole('button', { name: 'Update now' }))
+  await appUpdate({ stage: 'ready' })
+  await settle()
+  expect(row().textContent).toContain('incomplete or damaged')
+  expect(inPage().getByRole('button', { name: 'Retry' })).toBeTruthy()
 })
 
 test.each([
@@ -349,7 +452,7 @@ test('Tab goes nav, then the screen in order; radios are one stop per group', as
     expect.stringContaining('kbps'),
     expect.stringContaining('Up to'),
     expect.stringContaining('Match system'),
-    'Get the update',
+    'Update now',
     'Check for updates',
     'Source code',
     'Open log folder',

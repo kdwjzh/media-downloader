@@ -17,10 +17,13 @@ class ErrorCode(StrEnum):
     PLAYLIST_URL = "playlistUrl"
     NETWORK = "network"
     UNKNOWN = "unknown"
+    # Only for an app update: the downloaded installer is not the one the release lists.
+    CHECKSUM_MISMATCH = "checksumMismatch"
 
 
-# Retrying any other error cannot succeed: there is no sign-in in this version.
-RETRYABLE = frozenset({ErrorCode.NETWORK, ErrorCode.UNKNOWN})
+# Retrying any other error cannot succeed: there is no sign-in in this version. A download
+# that did not match its checksum is usually a damaged download, so it may.
+RETRYABLE = frozenset({ErrorCode.NETWORK, ErrorCode.UNKNOWN, ErrorCode.CHECKSUM_MISMATCH})
 
 
 class InvalidTransition(Exception):

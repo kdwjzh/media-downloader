@@ -9,7 +9,7 @@ import { Button } from './Button'
 import { useRowTitle } from './rowTitle'
 import { FormatTag, Thumb } from './Thumb'
 
-function ProgressBar({ percent, label }: { percent?: number; label: string }) {
+export function ProgressBar({ percent, label }: { percent?: number; label: string }) {
   return (
     <div
       role="progressbar"

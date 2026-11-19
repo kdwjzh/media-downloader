@@ -13,6 +13,7 @@ from app.domain.progress import Progress
 from app.services.history import HistoryAdded
 from app.services.queue import QueueItem, TaskProgress, TasksChanged, TasksRemoved
 from app.services.settings import SettingsChanged
+from app.services.updates import AppUpdateChanged
 
 Json = dict[str, object]
 
@@ -73,7 +74,15 @@ def lookup(result: MediaInfo | PlaylistInfo) -> Json:
     return {"kind": "video", "info": to_json(result)}
 
 
-Event = TasksChanged | TasksRemoved | TaskProgress | HistoryAdded | SettingsChanged | CloseRequested
+Event = (
+    TasksChanged
+    | TasksRemoved
+    | TaskProgress
+    | HistoryAdded
+    | SettingsChanged
+    | AppUpdateChanged
+    | CloseRequested
+)
 
 
 def event(value: Event) -> Json:
@@ -89,6 +98,8 @@ def event(value: Event) -> Json:
             return {"type": "historyAdded", "entry": to_json(value.entry)}
         case SettingsChanged():
             return {"type": "settingsChanged", "settings": to_json(value.settings)}
+        case AppUpdateChanged():
+            return {"type": "appUpdateChanged", "status": to_json(value.status)}
         case CloseRequested():
             return {"type": "closeRequested"}
     raise TypeError(f"not an event: {value!r}")

@@ -17,6 +17,7 @@ from app.domain.engine import (
 )
 from app.domain.errors import ErrorCode
 from app.domain.media import Format
+from app.infrastructure import binaries
 from app.infrastructure.engines.ytdlp import args, files
 from app.infrastructure.engines.ytdlp import engine as engine_module
 from app.infrastructure.engines.ytdlp.engine import YtDlpEngine
@@ -262,3 +263,46 @@ def test_the_retry_reports_the_file_sizes_again_and_nothing_else(
     with pytest.raises(EngineError):
         engine.download(replace(request, dest_dir=str(tmp_path)), events.append)
     assert events == [FileSizes((252182,)), FileSizes((252182,))]
+
+
+# ---- yt-dlp.exe.old (ADR 0019)
+
+
+@pytest.fixture
+def bin_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
+    monkeypatch.setattr(binaries, "bin_dir", lambda: tmp_path)
+    (tmp_path / "yt-dlp.exe").write_text("new")
+    (tmp_path / "yt-dlp.exe.old").write_text("old")
+    return tmp_path
+
+
+def updater(monkeypatch: pytest.MonkeyPatch, stdout: str) -> None:
+    monkeypatch.setattr(engine_module, "run", lambda command, timeout: (0, stdout, ""))
+
+
+def test_a_successful_update_deletes_the_old_exe(
+    monkeypatch: pytest.MonkeyPatch, bin_dir: Path
+) -> None:
+    updater(monkeypatch, "Updating to stable@2026.10.26 ...\nUpdated yt-dlp to stable@2026.10.26\n")
+    assert YtDlpEngine().update() is True
+    assert sorted(p.name for p in bin_dir.iterdir()) == ["yt-dlp.exe"]
+
+
+def test_starting_the_app_deletes_an_old_exe_left_by_an_earlier_run(
+    bin_dir: Path, tmp_path: Path
+) -> None:
+    YtDlpEngine().remove_stale_temp(str(tmp_path))
+    assert not (bin_dir / "yt-dlp.exe.old").exists()
+    assert (bin_dir / "yt-dlp.exe").exists()
+
+
+def test_an_old_exe_still_in_use_is_left_for_the_next_start(
+    monkeypatch: pytest.MonkeyPatch, bin_dir: Path, tmp_path: Path
+) -> None:
+    def in_use(self: Path, missing_ok: bool = False) -> None:
+        raise PermissionError(13, "in use by a running download")
+
+    monkeypatch.setattr(Path, "unlink", in_use)
+    YtDlpEngine().remove_stale_temp(str(tmp_path))  # no error
+    monkeypatch.undo()
+    assert (bin_dir / "yt-dlp.exe.old").exists()

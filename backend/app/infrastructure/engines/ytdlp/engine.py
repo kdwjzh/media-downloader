@@ -15,6 +15,7 @@ from app.domain.engine import (
 )
 from app.domain.errors import ErrorCode
 from app.domain.media import MediaInfo, PlaylistInfo
+from app.infrastructure import binaries
 from app.infrastructure.engines.ytdlp import args, files, parse, urls
 from app.infrastructure.engines.ytdlp.errors import classify, is_forbidden
 from app.infrastructure.process import JobProcess, run
@@ -160,8 +161,10 @@ class YtDlpEngine:
             self.cancel(task_id)
 
     def remove_stale_temp(self, dest_dir: str) -> None:
-        """For starting the app: deletes task folders left by a run that ended abnormally."""
+        """For starting the app: deletes task folders left by a run that ended abnormally,
+        and the old yt-dlp an update left behind."""
         files.remove_stale(dest_dir)
+        _remove_old_exe()
 
     def version(self) -> str:
         try:
@@ -185,4 +188,17 @@ class YtDlpEngine:
             raise EngineError(ErrorCode.NETWORK, str(error)) from error
         except OSError as error:
             raise EngineError(ErrorCode.UNKNOWN, str(error)) from error
-        return parse.update_result(code, out, err)
+        updated = parse.update_result(code, out, err)
+        if updated:
+            _remove_old_exe()
+        return updated
+
+
+def _remove_old_exe() -> None:
+    """yt-dlp -U renames the running yt-dlp.exe to yt-dlp.exe.old and schedules its own
+    deletion a few seconds later, but that helper dies with our job (docs/技術驗證.md item
+    26). A download still running the old one keeps it locked: then it goes next start."""
+    try:
+        binaries.yt_dlp().with_name("yt-dlp.exe.old").unlink(missing_ok=True)
+    except OSError:
+        pass

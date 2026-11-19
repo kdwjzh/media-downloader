@@ -4,6 +4,7 @@
 import type {
   AboutInfo,
   AppUpdateInfo,
+  AppUpdateStatus,
   BackendEvent,
   EngineUpdateResult,
   Format,
@@ -39,6 +40,9 @@ export interface Commands {
   update_settings(changes: SettingsChanges): Settings
   choose_download_folder(): Settings
   check_app_update(): AppUpdateInfo
+  start_app_update(): AppUpdateStatus
+  cancel_app_update(): void
+  install_app_update(): void
   update_engine(): EngineUpdateResult
   get_about(): AboutInfo
   open_log_file(): void
@@ -78,6 +82,10 @@ export const updateSettings = (changes: SettingsChanges) => call('update_setting
  *  dedicated message, not the generic unknown error (contract 3.4). */
 export const chooseDownloadFolder = () => call('choose_download_folder')
 export const checkAppUpdate = () => call('check_app_update')
+export const startAppUpdate = () => call('start_app_update')
+export const cancelAppUpdate = () => call('cancel_app_update')
+/** The app closes when it works: the reply may never come. */
+export const installAppUpdate = () => call('install_app_update')
 export const updateEngine = () => call('update_engine')
 export const getAbout = () => call('get_about')
 export const openLogFile = () => call('open_log_file')

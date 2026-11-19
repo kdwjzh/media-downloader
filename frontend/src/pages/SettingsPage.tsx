@@ -2,12 +2,22 @@ import { CheckCircle, Warning } from '@phosphor-icons/react'
 import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../components/Button'
+import { ProgressBar } from '../components/QueueRow'
 import { Segmented } from '../components/Segmented'
-import { shortenPath } from '../format'
+import { formatBytes, shortenPath } from '../format'
 import { usePage } from '../stores/page'
 import { openLog } from '../stores/queue'
 import { changeSettings, chooseFolder, useSettings } from '../stores/settings'
-import { loadAbout, openLink, openLogFolder, updateEngine, useUpdates } from '../stores/updates'
+import {
+  cancelAppUpdate,
+  installAppUpdate,
+  loadAbout,
+  openLink,
+  openLogFolder,
+  startAppUpdate,
+  updateEngine,
+  useUpdates,
+} from '../stores/updates'
 import { CONCURRENT_CHOICES, type Language, MP3_BITRATES, MP4_HEIGHTS, type OnDuplicate, type Settings } from '../types'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -246,10 +256,90 @@ function InterfaceSection({ settings }: { settings: Settings }) {
   )
 }
 
+const APP_FAILED: Record<string, string> = {
+  network: 'appUpdate.failedNetwork',
+  checksumMismatch: 'appUpdate.failedChecksum',
+}
+
+/** The app's own row: "Update now", then its progress, check, install or failure. One
+ *  button element throughout, so focus stays on it as its job changes (decisions/0019). */
+function AppRow({ version }: { version: ReactNode }) {
+  const { t } = useTranslation()
+  const labelId = useId()
+  const { latestVersion, app } = useUpdates()
+  const { stage, receivedBytes = 0, totalBytes, error } = app
+  const busy = stage === 'downloading' || stage === 'verifying'
+  const percent = totalBytes ? Math.min(100, Math.floor((receivedBytes / totalBytes) * 100)) : undefined
+  const action = busy
+    ? { label: t('action.cancel'), run: cancelAppUpdate }
+    : stage === 'ready' || stage === 'installing'
+      ? { label: t('appUpdate.installNow'), run: installAppUpdate }
+      : { label: stage === 'failed' ? t('action.retry') : t('appUpdate.updateNow'), run: startAppUpdate }
+  let below: ReactNode = null
+  if (stage === 'downloading') {
+    const label =
+      percent === undefined
+        ? t('appUpdate.downloadingNoTotal', { received: formatBytes(receivedBytes) })
+        : t('appUpdate.downloading', { percent, received: formatBytes(receivedBytes), total: formatBytes(totalBytes ?? 0) })
+    below = (
+      <div className="flex flex-col gap-1">
+        <ProgressBar percent={percent} label={t('appUpdate.progressLabel')} />
+        <p className="tabular-nums">{label}</p>
+        <p className="text-text-muted">{t('appUpdate.closesAfter')}</p>
+      </div>
+    )
+  } else if (stage === 'verifying') {
+    below = (
+      <div className="flex flex-col gap-1">
+        <ProgressBar label={t('appUpdate.progressLabel')} />
+        <p>{t('appUpdate.verifying')}</p>
+      </div>
+    )
+  } else if (stage === 'ready') {
+    below = <p>{t('appUpdate.ready')}</p>
+  } else if (stage === 'installing') {
+    below = <p>{t('appUpdate.installing')}</p>
+  } else if (stage === 'failed') {
+    below = (
+      <div className="flex flex-wrap items-center gap-x-2">
+        <p className="flex items-center gap-1 font-medium text-danger">
+          <Warning size={16} aria-hidden="true" className="shrink-0" />
+          {t(APP_FAILED[error ?? ''] ?? 'appUpdate.failedUnknown')}
+        </p>
+        {error !== 'network' && error !== 'checksumMismatch' && (
+          <Button variant="text" onClick={() => void openLog()}>
+            {t('action.openLog')}
+          </Button>
+        )}
+      </div>
+    )
+  }
+  return (
+    <Row label={t('app.name')} labelId={labelId} below={latestVersion && <div aria-live="polite">{below}</div>}>
+      {version}
+      {latestVersion && (
+        <>
+          <span>{t('settings.newVersion', { version: latestVersion })}</span>
+          {/* aria-disabled, not disabled: a disabled button drops keyboard focus to the page. */}
+          <Button
+            aria-disabled={stage === 'installing' || undefined}
+            aria-describedby={labelId}
+            className="aria-disabled:pointer-events-none aria-disabled:opacity-45"
+            onClick={() => void action.run()}
+          >
+            {action.label}
+          </Button>
+          {stage === 'failed' && <Button onClick={() => void openLink('releasePage')}>{t('settings.getUpdate')}</Button>}
+        </>
+      )}
+    </Row>
+  )
+}
+
 function UpdatesSection() {
   const { t } = useTranslation()
   const ytdlpId = useId()
-  const { latestVersion, about, aboutStatus, engine } = useUpdates()
+  const { about, aboutStatus, engine } = useUpdates()
   const checking = engine.state === 'checking'
   const failed = engine.state === 'failed'
   // After an update the new version is known before the About list is read again.
@@ -257,15 +347,7 @@ function UpdatesSection() {
   const version = (v: string | undefined) => (aboutStatus === 'loading' && !v ? <Skeleton /> : <span className="tabular-nums">{v ?? '—'}</span>)
   return (
     <Section title={t('settings.updates')}>
-      <Row label={t('app.name')}>
-        {version(about?.appVersion)}
-        {latestVersion && (
-          <>
-            <span>{t('settings.newVersion', { version: latestVersion })}</span>
-            <Button onClick={() => void openLink('releasePage')}>{t('settings.getUpdate')}</Button>
-          </>
-        )}
-      </Row>
+      <AppRow version={version(about?.appVersion)} />
       <Row
         label="yt-dlp"
         labelId={ytdlpId}

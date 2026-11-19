@@ -7,6 +7,8 @@
 #endif
 
 #define AppExe "MediaDownloader.exe"
+; backend/app/main.py creates it; AppMutex below and the update wait in [Code] check it.
+#define AppMutexName "MediaDownloaderAppMutex"
 ; The external programs live outside the install folder, so app updates leave a yt-dlp
 ; the user updated alone. backend/app/infrastructure/binaries/ looks in the same place.
 #define BinDir "{localappdata}\media-downloader\bin"
@@ -25,7 +27,12 @@ DisableProgramGroupPage=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=output
+#ifdef TestBuild
+; A test build asks 127.0.0.1 for updates (docs/decisions/0019): never upload it.
+OutputBaseFilename=MediaDownloader-Setup-{#AppVersion}-TEST
+#else
 OutputBaseFilename=MediaDownloader-Setup-{#AppVersion}
+#endif
 SetupIconFile=..\brand\icons\app.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName=Media Downloader
@@ -34,8 +41,11 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 ; The app creates this mutex (backend/app/main.py). Setup and the uninstaller ask the user
 ; to close the app instead of closing it for them: that could cut a download short.
-AppMutex=MediaDownloaderAppMutex
+AppMutex={#AppMutexName}
 CloseApplications=no
+; Cancelling halfway cannot be undone: Inno's rollback does not bring back replaced files or
+; the _internal folder [InstallDelete] removed, so the app would not start (ADR 0019).
+AllowCancelDuringInstall=no
 ; Follow the Windows display language, like the app does.
 ShowLanguageDialog=no
 LanguageDetectionMethod=uilanguage
@@ -71,9 +81,15 @@ Name: "{autoprograms}\Media Downloader"; Filename: "{app}\{#AppExe}"
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,Media Downloader}"; Flags: nowait postinstall skipifsilent
 
+[Run]
+; An update the app started (/UPDATE=1 with /SILENT): open the new version when done.
+Filename: "{app}\{#AppExe}"; Flags: nowait skipifnotsilent; Check: IsAppUpdate
+
 [UninstallDelete]
 ; The programs belong to the app; yt-dlp.exe.old (left by a yt-dlp update) is not tracked.
 Type: filesandordirs; Name: "{#BinDir}"
+; Installers the app downloaded to update itself.
+Type: filesandordirs; Name: "{localappdata}\media-downloader\updates"
 Type: dirifempty; Name: "{localappdata}\media-downloader"
 
 [Code]
@@ -88,9 +104,30 @@ begin
     and (Version <> '') and (Version <> '0.0.0.0');
 end;
 
+// The app starts setup with /UPDATE=1 (backend/app/infrastructure/app_installer.py).
+function IsAppUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;
+
 function InitializeSetup: Boolean;
+var
+  Waited: Integer;
 begin
   Result := True;
+  if IsAppUpdate then
+  begin
+    // The app closes right after starting us. Setup checks AppMutex once, after this
+    // function, and would otherwise ask the user to close an app that is already closing.
+    // After 10 s it asks after all: the app is stuck, and the user can close it.
+    Waited := 0;
+    while CheckForMutexes('{#AppMutexName}') and (Waited < 10000) do
+    begin
+      Sleep(200);
+      Waited := Waited + 200;
+    end;
+    Exit; // the app ran, so WebView2 is there
+  end;
   // A machine-wide WebView2 is registered in the 32-bit view; a per-user one under HKCU.
   if not (HasWebView2(HKLM32) or HasWebView2(HKCU)) then
     Result := MsgBox(CustomMessage('WebView2Missing'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;

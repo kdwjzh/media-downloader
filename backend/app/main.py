@@ -7,6 +7,7 @@ window is gone, stop sending events and stop every download. See docs/decisions/
 import ctypes
 import logging
 import sys
+import threading
 from pathlib import Path
 
 import webview
@@ -91,6 +92,10 @@ def main() -> None:
         fatal(error)
         sys.exit(1)
     backend.start()
+    if FROZEN:
+        # Only the installed app: development keeps the yt-dlp in bin/ that the recorded
+        # test samples came from (ADR 0019).
+        threading.Thread(target=backend.updates.auto_update_engine, daemon=True).start()
 
     api = BridgeApi(backend, events, choose_folder, destroy)
     created = webview.create_window(

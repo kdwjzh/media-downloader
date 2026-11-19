@@ -19,7 +19,16 @@ from app.domain.settings import Language, Settings
 from app.domain.task import TaskStatus
 from app.services.external import Opened
 from app.services.queue import QueueItem
-from app.services.updates import AboutInfo, AppUpdateInfo, Component, EngineUpdateResult
+from app.services.updates import (
+    AboutInfo,
+    AppUpdateInfo,
+    AppUpdateStatus,
+    Component,
+    EngineUpdateResult,
+)
+from app.services.updates import (
+    Stage as UpdateStage,
+)
 
 COMMANDS = [
     "lookup", "add_to_queue", "get_queue", "cancel_task", "retry_task", "readd_task",
@@ -27,6 +36,7 @@ COMMANDS = [
     "open_history_folder", "delete_history", "clear_history", "get_settings",
     "update_settings", "choose_download_folder", "check_app_update", "update_engine",
     "get_about", "open_log_file", "open_log_folder", "open_link", "confirm_close", "ping",
+    "start_app_update", "cancel_app_update", "install_app_update",
 ]  # fmt: skip
 # Arguments that are valid for each command.
 ARGS: dict[str, tuple[object, ...]] = {
@@ -56,9 +66,14 @@ class Stage:
     def __init__(self) -> None:
         self.media_info, self.queue, self.settings = Mock(), Mock(), Mock()
         self.history, self.updates, self.external = Mock(), Mock(), Mock()
+        self.app_update = Mock()
+        self.app_update.start.return_value = AppUpdateStatus(UpdateStage.IDLE)
+        self.app_update.install.return_value = False
+        self.app_update.cancel.return_value = None
         self.backend = Backend(
-            self.media_info, self.queue, self.settings, self.history, self.updates, self.external
-        )
+            self.media_info, self.queue, self.settings, self.history, self.updates,
+            self.app_update, self.external,
+        )  # fmt: skip
         self.queue.items.return_value = []
         self.settings.get.return_value = SETTINGS
         self.events = Mock()
@@ -91,7 +106,7 @@ def call(stage: Stage, command: str, *args: object) -> object:
 def test_the_page_sees_exactly_the_commands_of_the_contract(stage: Stage) -> None:
     # pywebview exposes every public attribute, nested ones included.
     public = {name for name in dir(stage.api) if not name.startswith("_")}
-    assert public == set(COMMANDS) and len(COMMANDS) == 25
+    assert public == set(COMMANDS) and len(COMMANDS) == 28
 
 
 @pytest.mark.parametrize("command", COMMANDS)
@@ -105,7 +120,7 @@ def test_no_exception_ever_reaches_the_page(
 
             return fail
 
-    stage.api._backend = Backend(*(Broken() for _ in range(6)))  # type: ignore[arg-type]
+    stage.api._backend = Backend(*(Broken() for _ in range(7)))  # type: ignore[arg-type]
     stage.chosen = "C:\\x"
     stage.close = Mock(side_effect=RuntimeError("a bug"))  # type: ignore[method-assign]
     stage.api._close_window = stage.close
@@ -422,13 +437,65 @@ def test_choose_download_folder_that_cannot_be_written_to_is_an_error(stage: Sta
 
 
 def test_check_app_update(stage: Stage) -> None:
-    stage.updates.check_app_update.return_value = AppUpdateInfo("0.1.0", "0.2.0")
+    stage.app_update.info.return_value = AppUpdateInfo("0.1.0", "0.2.0")
     assert stage.api.check_app_update() == {
         "ok": True,
         "data": {"currentVersion": "0.1.0", "latestVersion": "0.2.0"},
     }
-    stage.updates.check_app_update.return_value = AppUpdateInfo("0.1.0")
+    stage.app_update.info.return_value = AppUpdateInfo("0.1.0")
     assert stage.api.check_app_update() == {"ok": True, "data": {"currentVersion": "0.1.0"}}
+    # An update under way (the page was reloaded): its status comes along.
+    stage.app_update.info.return_value = AppUpdateInfo(
+        "1.0.0-rc.1", "1.0.0-rc.2", AppUpdateStatus(UpdateStage.DOWNLOADING, 5, 10)
+    )
+    assert stage.api.check_app_update() == {
+        "ok": True,
+        "data": {
+            "currentVersion": "1.0.0-rc.1",
+            "latestVersion": "1.0.0-rc.2",
+            "status": {"stage": "downloading", "receivedBytes": 5, "totalBytes": 10},
+        },
+    }
+
+
+def test_start_and_cancel_app_update(stage: Stage) -> None:
+    stage.app_update.start.return_value = AppUpdateStatus(UpdateStage.DOWNLOADING, 0)
+    assert stage.api.start_app_update() == {
+        "ok": True,
+        "data": {"stage": "downloading", "receivedBytes": 0},
+    }
+    assert stage.api.cancel_app_update() == {"ok": True}
+    stage.app_update.cancel.assert_called_once_with()
+
+
+def test_install_app_update_closes_the_app_only_when_the_installer_runs(stage: Stage) -> None:
+    stage.app_update.install.return_value = False  # nothing was ready
+    assert stage.api.install_app_update() == {"ok": True}
+    assert stage.closed == 0
+    stage.app_update.install.return_value = True
+    assert stage.api.install_app_update() == {"ok": True}
+    assert stage.closed == 1
+    # Closing for the update does not ask again: the page already did.
+    stage.queue.items.return_value = [Mock(status="downloading")]
+    assert stage.api._on_closing() is True
+
+
+@pytest.mark.parametrize("code", [ErrorCode.CHECKSUM_MISMATCH, ErrorCode.UNKNOWN])
+def test_install_app_update_that_fails_keeps_the_app_open(stage: Stage, code: ErrorCode) -> None:
+    stage.app_update.install.side_effect = EngineError(code, "raw")
+    assert stage.api.install_app_update() == {"ok": False, "error": code.value}
+    assert stage.closed == 0
+
+
+def test_the_app_update_event() -> None:
+    from app.bridge import shapes
+    from app.services.updates import AppUpdateChanged
+
+    event = AppUpdateChanged(AppUpdateStatus(UpdateStage.FAILED, error=ErrorCode.NETWORK))
+    assert shapes.event(event) == {
+        "type": "appUpdateChanged",
+        "status": {"stage": "failed", "error": "network"},
+    }
 
 
 def test_update_engine(stage: Stage) -> None:

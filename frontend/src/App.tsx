@@ -1,3 +1,4 @@
+import { AppUpdateDialog } from './components/AppUpdateDialog'
 import { ConfirmCloseDialog } from './components/ConfirmCloseDialog'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { NavRail } from './components/NavRail'
@@ -35,6 +36,7 @@ export default function App() {
       </div>
       <Toast />
       <LiveRegion />
+      <AppUpdateDialog />
       <ConfirmCloseDialog />
     </ErrorBoundary>
   )

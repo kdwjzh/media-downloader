@@ -22,7 +22,7 @@
 │   語言           [ 跟隨系統 ▾ ]                              │
 │                                                              │
 │ 更新                                                         │
-│   Media Downloader   0.1.0   有新版 0.2.0        [前往下載]  │
+│   Media Downloader   0.1.0   有新版 0.2.0        [立即更新]  │
 │   yt-dlp             2026.10.26                  [檢查更新]  │
 │                                                              │
 │ 關於                                                         │
@@ -43,7 +43,12 @@
 - 預設格式：跟預覽區塊「記住上次用的」是同一組值，兩邊改任何一邊都會同步。
 - 語言：跟隨系統／繁體中文／English。語言名稱用該語言本身寫，不翻譯。
 - 更新：
-  - App 那一列只顯示目前版本。有新版時加上「有新版 x.y.z」與次要按鈕「前往下載」（開啟瀏覽器到發佈頁）。不自動下載、不彈窗。導覽列的圓點一直顯示到沒有新版為止，看過設定頁也不消失。
+  - App 那一列只顯示目前版本。有新版時加上「有新版 x.y.z」與次要按鈕「立即更新」。按下才下載，不彈窗。導覽列的圓點一直顯示到沒有新版為止，看過設定頁也不消失（`decisions/0019`）。
+    - 下載中：同一顆按鈕變「取消」；下方是確定進度條、「下載更新中 45%（50 MB / 110 MB）」與一行灰字說明下載完會關閉並安裝。
+    - 核對中：不確定進度條與「正在核對檔案…」。
+    - 核對完：佇列沒有沒完成的項目就直接安裝（「正在開啟安裝程式，App 即將關閉…」，按鈕 `aria-disabled`）；有就跳確認視窗（`appUpdate.confirmTitle`，「繼續下載」／「停止並更新」）。選「繼續下載」時按鈕變「立即安裝」，下方說明可以晚點再裝。
+    - 失敗：磚紅一行加警告圖示說明原因（`network`、`checksumMismatch` 各有一句，其他用 `appUpdate.failedUnknown` 加「開啟記錄檔」），按鈕變「重試」，旁邊多一顆「前往下載」（開啟瀏覽器到發佈頁）。
+    - 一直是同一顆按鈕，只換文字與動作，焦點留在它上面。
   - yt-dlp 那一列有「檢查更新」。按下後變成「檢查中…」並停用（`aria-disabled`，焦點留在按鈕上），下方一行「可能要二十秒左右」；結果顯示在那一列下方，到下一次檢查：「已是最新版」、「已更新到 x」、`network` 用 `settings.updateFailed`、其他用 `settings.updateFailedUnknown` 加「開啟記錄檔」。失敗時按鈕寫「重試」。
 - 版本（App、yt-dlp、元件清單）第一次進這個畫面才讀（約 1.5 秒），讀取中用骨架佔位。
 - 關於：App 名稱與版本、授權 MIT、使用的元件與各自的授權與版本（yt-dlp、FFmpeg、Deno、Noto Sans TC、Bricolage Grotesque）、「原始碼」、「開啟記錄檔資料夾」（兩顆次要按鈕）。
@@ -93,4 +98,6 @@
 | `settings.folderNotWritable` | 這個資料夾無法寫入，請選其他資料夾。 | This folder can't be written to. Choose another folder. |
 | `settings.keptOldFolder` | 已換成新的下載資料夾。佇列裡還沒完成的 {{count, number}} 個項目仍會存到原本的資料夾。 | Download folder changed. The {{count, number}} unfinished items in the queue still go to the old folder.（單數另有一句） |
 
-最後十個是 4e 實作時加的（`decisions/0016`）。重試、開啟記錄檔用 MASTER 的共用文案。
+最後十個是 4e 實作時加的（`decisions/0016`）。重試、開啟記錄檔用 MASTER 的共用文案。`settings.getUpdate`（前往下載）5b 起只在 App 更新失敗時出現。
+
+App 更新的文案在語言檔的 `appUpdate.*`（5b，`decisions/0019`）：`updateNow` 立即更新、`installNow` 立即安裝、`downloading`、`downloadingNoTotal`、`closesAfter`、`verifying`、`ready`、`installing`、`failedNetwork`、`failedChecksum`、`failedUnknown`、`confirmTitle`、`confirmBody`、`confirm` 停止並更新。確認視窗的「繼續下載」沿用 `close.keep`。

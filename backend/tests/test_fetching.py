@@ -33,7 +33,7 @@ class Opener:
 @pytest.fixture
 def net(monkeypatch: pytest.MonkeyPatch) -> Opener:
     opener = Opener()
-    monkeypatch.setattr(http, "_opener", opener)
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *handlers: opener)
     return opener
 
 
@@ -82,14 +82,12 @@ def test_an_answer_that_is_too_large_is_refused(net: Opener) -> None:
     assert len(http.get("https://i.ytimg.com/1.jpg", THUMB_HOSTS, 1000, 5)) == 1000
 
 
-def test_redirects_are_not_followed() -> None:
-    handlers = http._opener.handlers  # type: ignore[attr-defined]
-    [ours] = [h for h in handlers if isinstance(h, urllib.request.HTTPRedirectHandler)]
-    assert type(ours) is http._NoRedirect  # it replaced the default one
+def test_a_redirect_to_another_host_is_not_followed() -> None:
+    # Redirects are checked against the same list (decisions/0019); test_http.py has the rest.
+    handler = http._CheckedRedirects(THUMB_HOSTS, False)
     request = urllib.request.Request("https://i.ytimg.com/1.jpg")
-    headers = {"location": "https://evil.example/"}
-    # None: no new request is made, and urllib then raises the 302 as an HTTPError.
-    assert ours.http_error_302(request, io.BytesIO(), 302, "Found", headers) is None  # type: ignore[arg-type]
+    with pytest.raises(ValueError):
+        handler.redirect_request(request, io.BytesIO(), 302, "Found", {}, "https://evil.example/")
 
 
 # ---- thumbnails

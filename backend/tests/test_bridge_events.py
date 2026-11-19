@@ -10,6 +10,7 @@ import pytest
 
 from app.bridge import shapes
 from app.bridge.events import RECEIVER, EventSender, script
+from app.domain.errors import ErrorCode
 from app.domain.history import HistoryEntry
 from app.domain.media import Format
 from app.domain.progress import Progress
@@ -18,6 +19,8 @@ from app.domain.task import TaskStatus
 from app.services.history import HistoryAdded
 from app.services.queue import QueueItem, TaskProgress, TasksChanged, TasksRemoved
 from app.services.settings import SettingsChanged
+from app.services.updates import AppUpdateChanged, AppUpdateStatus
+from app.services.updates import Stage as UpdateStage
 
 WAIT = 5  # seconds; only reached when something is broken
 
@@ -41,6 +44,11 @@ EVENTS: list[tuple[shapes.Event, dict[str, object]]] = [
      {"type": "settingsChanged", "settings": {
          "downloadDir": "D:\\dl", "maxConcurrent": 3, "onDuplicate": "rename", "format": "mp3",
          "mp3Bitrate": 320, "mp4Height": 1080, "language": "system"}}),
+    (AppUpdateChanged(AppUpdateStatus(UpdateStage.DOWNLOADING, 100, 1000)),
+     {"type": "appUpdateChanged",
+      "status": {"stage": "downloading", "receivedBytes": 100, "totalBytes": 1000}}),
+    (AppUpdateChanged(AppUpdateStatus(UpdateStage.FAILED, error=ErrorCode.CHECKSUM_MISMATCH)),
+     {"type": "appUpdateChanged", "status": {"stage": "failed", "error": "checksumMismatch"}}),
     (shapes.CloseRequested(), {"type": "closeRequested"}),
 ]  # fmt: skip
 
@@ -53,7 +61,7 @@ def test_event_json(event: shapes.Event, expected: dict[str, object]) -> None:
 def test_every_kind_of_event_is_covered() -> None:
     kinds = {e["type"] for _, e in EVENTS}
     assert kinds == {"tasksChanged", "tasksRemoved", "taskProgress", "historyAdded",
-                     "settingsChanged", "closeRequested"}  # fmt: skip
+                     "settingsChanged", "appUpdateChanged", "closeRequested"}  # fmt: skip
 
 
 def payload_of(js: str) -> object:

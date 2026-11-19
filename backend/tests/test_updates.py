@@ -4,9 +4,12 @@ import pytest
 from fake_engine import FakeEngine
 from fakes import MemoryFile
 
+from app.domain import version
 from app.domain.engine import EngineError
 from app.domain.errors import ErrorCode
 from app.services.updates import (
+    ENGINE_CHECKED_TTL,
+    ENGINE_FAILED_TTL,
     FAILED_TTL,
     FOUND_TTL,
     AboutInfo,
@@ -14,7 +17,6 @@ from app.services.updates import (
     Component,
     EngineUpdateResult,
     UpdateService,
-    parse_version,
 )
 
 
@@ -25,6 +27,7 @@ class Box:
         self.asked = 0
         self.now = 1_000_000.0
         self.cache = MemoryFile()
+        self.engine_cache = MemoryFile()
         self.reads = 0
         self.service = self.open(current)
 
@@ -41,6 +44,7 @@ class Box:
                 (Component("Broken", "MIT"), self.broken),
                 (Component("Font", "OFL-1.1"), None),
             ],
+            self.engine_cache,
             lambda: self.now,
         )
 
@@ -69,8 +73,18 @@ class Box:
         ("1.2.3", "v1.2.2", None),
         ("1.10.0", "v1.9.9", None),
         ("2.0.0", "v1.99.99", None),
-        ("1.2.3", "v1.2.4-beta.1", None),  # not a release number we understand
+        ("1.2.3", "v1.2.4-beta.1", "1.2.4-beta.1"),  # a pre-release of a newer version
+        ("1.0.0-rc.1", "v1.0.0-rc.2", "1.0.0-rc.2"),
+        ("1.0.0-rc.2", "v1.0.0", "1.0.0"),
+        ("1.0.0-rc.9", "v1.0.0-rc.10", "1.0.0-rc.10"),  # numbers, not text
+        ("1.0.0-rc.2", "v1.0.0-rc.1", None),
+        ("1.0.0", "v1.0.0-rc.9", None),  # the release is newer than its pre-releases
+        ("1.0.0-rc.1", "v1.0.0-rc.1+build.5", None),  # build metadata does not count
+        ("1.2.3", "v1.2.4+build.5", "1.2.4"),  # and is not shown or used in addresses
         ("1.2.3", "v1.3", None),
+        ("1.2.3", "v01.3.0", None),  # leading zeros are not SemVer
+        ("1.2.3", "v1.3.0-", None),
+        ("1.2.3", "v1.3.0-rc.01", None),
         ("1.2.3", "latest", None),
         ("1.2.3", "", None),
         ("dev", "v9.9.9", None),  # our own version is not understood: say nothing
@@ -82,11 +96,25 @@ def test_only_a_higher_release_number_is_a_new_version(
     assert Box(current, latest).service.check_app_update() == AppUpdateInfo(current, newer)
 
 
-def test_parse_version() -> None:
-    assert parse_version("v1.2.3") == parse_version(" 1.2.3\n") == (1, 2, 3)
-    assert parse_version("v01.002.3") == (1, 2, 3)
-    for bad in ("1.2", "1.2.3.4", "v1.2.x", "V1.2.3", "1.2.3-rc1", "-1.2.3", ""):
-        assert parse_version(bad) is None
+def test_versions_sort_like_the_semver_example() -> None:
+    ordered = [
+        "1.0.0-alpha", "1.0.0-alpha.1", "1.0.0-alpha.beta", "1.0.0-beta", "1.0.0-beta.2",
+        "1.0.0-beta.11", "1.0.0-rc.1", "1.0.0", "1.0.1", "1.1.0", "2.0.0",
+    ]  # fmt: skip
+    keys = [version.parse(v) for v in ordered]
+    assert None not in keys
+    assert keys == sorted(keys)  # type: ignore[type-var]
+    assert len(set(keys)) == len(keys)
+
+
+def test_what_is_not_a_version() -> None:
+    assert version.parse("v1.2.3") == version.parse(" 1.2.3\n")
+    bad_ones = ("1.2", "1.2.3.4", "v1.2.x", "V1.2.3", "-1.2.3", "", "01.2.3", "1.2.3-",
+                "1.2.3-a..b", "1.2.3-é", "1.2.3+", "../1.2.3", "1.2.3/x", "1 2.3")  # fmt: skip
+    for bad in bad_ones:
+        assert version.parse(bad) is None, bad
+        assert version.plain(bad) is None
+    assert version.plain("v1.0.0-rc.1+build.7") == "1.0.0-rc.1"
 
 
 @pytest.mark.parametrize(
@@ -182,3 +210,96 @@ def test_about_lists_every_component_and_reads_versions_once() -> None:
     box.engine.version = lambda: "newer"  # type: ignore[method-assign]
     box.service.update_engine()
     assert box.service.get_about().components[0].version == "newer"  # read again after an update
+
+
+# ---- updating the engine at start (ADR 0019)
+
+
+def test_the_engine_updates_itself_at_the_first_start() -> None:
+    box = Box()
+    calls: list[str] = []
+
+    def update() -> bool:
+        calls.append("update")
+        return True
+
+    box.engine.update = update  # type: ignore[method-assign]
+    box.service.auto_update_engine()
+    assert calls == ["update"]
+    assert box.engine_cache.data == {"checked_at": box.now, "ok": True}
+
+
+def test_the_engine_is_checked_once_a_day() -> None:
+    box = Box()
+    calls: list[str] = []
+
+    def update() -> bool:
+        calls.append("update")
+        return False
+
+    box.engine.update = update  # type: ignore[method-assign]
+    box.service.auto_update_engine()
+    box.now += ENGINE_CHECKED_TTL - 1
+    box.open("1.2.3").auto_update_engine()  # a restart
+    assert calls == ["update"]
+    box.now += 1
+    box.service.auto_update_engine()
+    assert calls == ["update", "update"]
+
+
+def test_a_failed_engine_check_is_tried_again_after_an_hour_and_never_raises(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    box = Box()
+    calls: list[str] = []
+
+    def fail() -> bool:
+        calls.append("update")
+        raise EngineError(ErrorCode.NETWORK, "offline")
+
+    box.engine.update = fail  # type: ignore[method-assign]
+    box.service.auto_update_engine()
+    assert box.engine_cache.data == {"checked_at": box.now, "ok": False}
+    assert "could not update the engine at start" in caplog.text
+    box.now += ENGINE_FAILED_TTL - 1
+    box.service.auto_update_engine()
+    assert calls == ["update"]
+    box.now += 1
+    box.service.auto_update_engine()
+    assert calls == ["update", "update"]
+
+
+def test_a_broken_engine_cache_is_no_error() -> None:
+    box = Box()
+    box.engine_cache.data = {"checked_at": "soon", "ok": "yes"}
+    box.engine_cache.fail = True
+    box.service.auto_update_engine()  # reads nothing usable, updates, cannot save: no raise
+
+
+def test_the_about_list_waits_for_an_update_that_is_running() -> None:
+    import threading
+
+    box = Box()
+    started, release = threading.Event(), threading.Event()
+
+    def slow_update() -> bool:
+        started.set()
+        release.wait(5)
+        box.engine.version = lambda: "new"  # type: ignore[method-assign]
+        return True
+
+    box.engine.update = slow_update  # type: ignore[method-assign]
+    updater = threading.Thread(target=box.service.auto_update_engine)
+    updater.start()
+    assert started.wait(5)
+    versions: list[str | None] = []
+    reader = threading.Thread(
+        target=lambda: versions.append(box.service.get_about().components[0].version)
+    )
+    reader.start()
+    reader.join(0.2)
+    assert reader.is_alive()  # waiting, not reading the old version
+    release.set()
+    updater.join(5)
+    reader.join(5)
+    assert versions == ["new"]

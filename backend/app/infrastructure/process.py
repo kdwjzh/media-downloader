@@ -116,3 +116,26 @@ def run(args: list[str], timeout: float) -> tuple[int, str, str]:
     finally:
         process.kill()
         process.close()
+
+
+_DETACHED_PROCESS = 0x8
+_CREATE_BREAKAWAY_FROM_JOB = 0x01000000
+
+
+def launch_detached(args: list[str]) -> None:
+    """Starts a program that must outlive this app (the app's installer) and does not wait
+    for it. Not in a job of ours; out of any job this app runs in, where Windows allows it.
+    Raises OSError."""
+    flags = subprocess.CREATE_NEW_PROCESS_GROUP | _DETACHED_PROCESS
+    try:
+        subprocess.Popen(
+            args,
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            creationflags=flags | _CREATE_BREAKAWAY_FROM_JOB,
+        )  # fmt: skip
+    except PermissionError:  # the job this app is in does not allow breaking away
+        subprocess.Popen(
+            args,
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            creationflags=flags,
+        )  # fmt: skip

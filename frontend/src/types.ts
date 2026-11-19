@@ -25,9 +25,10 @@ export type ErrorCode =
   | 'playlistUrl'
   | 'network'
   | 'unknown'
+  | 'checksumMismatch'
 
 // Only these get a Retry button; retrying the others cannot succeed.
-export const RETRYABLE: ReadonlySet<ErrorCode> = new Set(['network', 'unknown'])
+export const RETRYABLE: ReadonlySet<ErrorCode> = new Set(['network', 'unknown', 'checksumMismatch'])
 
 /** One selectable format and quality. MP3: kbps. MP4: height, short side for vertical videos. */
 export interface FormatOption {
@@ -149,6 +150,20 @@ export interface AppUpdateInfo {
   currentVersion: string
   /** Only when a newer version exists. */
   latestVersion?: string
+  /** Only when an update is under way or failed (the page was reloaded meanwhile). */
+  status?: AppUpdateStatus
+}
+
+export type AppUpdateStage = 'idle' | 'downloading' | 'verifying' | 'ready' | 'installing' | 'failed'
+
+export interface AppUpdateStatus {
+  stage: AppUpdateStage
+  /** Downloading only. */
+  receivedBytes?: number
+  /** Downloading, when the server says. */
+  totalBytes?: number
+  /** Failed only: network, unknown or checksumMismatch. */
+  error?: ErrorCode
 }
 
 export interface EngineUpdateResult {
@@ -189,4 +204,5 @@ export type BackendEvent =
   | { type: 'taskProgress'; progress: TaskProgress }
   | { type: 'historyAdded'; entry: HistoryEntry }
   | { type: 'settingsChanged'; settings: Settings }
+  | { type: 'appUpdateChanged'; status: AppUpdateStatus }
   | { type: 'closeRequested' }

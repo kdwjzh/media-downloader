@@ -171,7 +171,7 @@
 
 ### 確認視窗
 
-- 只用在不可逆的動作：清空紀錄、還有下載沒完成時關閉視窗、取消全部（取消的項目要逐一重新加入，大批時等於不可逆）。更新通知不用視窗。元件是 `ConfirmDialog`。
+- 只用在不可逆的動作：清空紀錄、還有下載沒完成時關閉視窗、取消全部（取消的項目要逐一重新加入，大批時等於不可逆）、還有下載沒完成時安裝 App 的更新（App 會關閉，`decisions/0019`）。「有新版」的通知不用視窗。元件是 `ConfirmDialog`。
 - 用瀏覽器內建的 `<dialog>` 加 `showModal()`：焦點鎖在視窗內、Esc 關閉、關閉後焦點回到原本的地方。
 - 預設焦點在「放棄這個動作」的按鈕上。這顆按鈕通常叫「取消」；但如果「取消」會被讀成相反的意思，就改用說清楚結果的詞（關閉確認與取消全部用「繼續下載」，因為「取消」會被讀成取消下載）。
 - 淡入 150ms；內建的 `<dialog>` 關閉時立刻消失，沒有淡出。
@@ -278,7 +278,7 @@
 | `network` | 連不上網路／請檢查網路連線後重試。 | Can't connect／Check your internet connection, then retry. | 有 |
 | `unknown` | 下載時發生未預期的問題／可以重試；如果還是不行，記錄檔裡有詳細資訊。 | Something unexpected went wrong／You can retry. The log file has details. | 有，另有「開啟記錄檔」 |
 
-`ageRestricted` 與 `membersOnly` 的說法刻意不提登入（第一版沒有這個功能）。`liveNotSupported` 是設計時加的。`playlistUrl` 是階段 3c 加的，只會出現在佇列：預覽還沒查完就被自動加入的網址，查出來是播放列表。後端的 `ErrorCode`（`backend/app/domain/errors.py`）用的就是這 12 個鍵名，改的時候兩邊一起改。
+`ageRestricted` 與 `membersOnly` 的說法刻意不提登入（第一版沒有這個功能）。`liveNotSupported` 是設計時加的。`playlistUrl` 是階段 3c 加的，只會出現在佇列：預覽還沒查完就被自動加入的網址，查出來是播放列表。`checksumMismatch` 是階段 5b 加的，只用在 App 更新（設定頁有自己的文案 `appUpdate.failedChecksum`）。後端的 `ErrorCode`（`backend/app/domain/errors.py`）用的就是這 13 個鍵名，改的時候兩邊一起改。
 
 ## 9. 交付前檢查
 

@@ -5,6 +5,7 @@ The queue reads settings while it holds its own lock, so a QueueSettings must ne
 back into the queue from inside its members (or while holding a lock they need).
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -94,3 +95,44 @@ class Shell(Protocol):
     def open_path(self, path: str) -> None: ...
 
     def open_url(self, url: str) -> None: ...
+
+
+class InstallerStore(Protocol):
+    """Downloads a release's installer and its checksum file into a folder only this user
+    can write to, under names it makes itself, and starts the installer. Every network or
+    file failure raises EngineError (NETWORK or UNKNOWN)."""
+
+    def download(
+        self,
+        version: str,
+        on_progress: Callable[[int, int | None], None],
+        cancelled: Callable[[], bool],
+    ) -> tuple[int, str] | None:
+        """The installer, into a partial file. Returns (size, SHA-256 hex) or None when
+        cancelled (the partial file is gone then). on_progress(received, total) is called
+        often and must be quick."""
+        ...
+
+    def checksum_text(self, version: str) -> str:
+        """The release's .sha256 file, at most a few hundred bytes."""
+        ...
+
+    def expected_name(self, version: str) -> str:
+        """The installer's file name, as the checksum file names it."""
+        ...
+
+    def accept(self, version: str) -> None:
+        """The partial file was checked: give it its real name."""
+        ...
+
+    def digest(self, version: str) -> tuple[int, str]:
+        """(size, SHA-256 hex) of the accepted installer, read again from the disk."""
+        ...
+
+    def launch(self, version: str) -> None:
+        """Starts the accepted installer outside the app's jobs, so it outlives the app."""
+        ...
+
+    def discard(self) -> None:
+        """Deletes every downloaded file. Files in use are left for the next time."""
+        ...

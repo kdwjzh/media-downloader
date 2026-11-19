@@ -12,6 +12,7 @@ from pathlib import Path
 from app import __version__
 from app.domain.history import HistoryRecord
 from app.infrastructure import binaries, releases
+from app.infrastructure.app_installer import AppInstaller
 from app.infrastructure.engines.ytdlp import urls
 from app.infrastructure.engines.ytdlp.engine import YtDlpEngine
 from app.infrastructure.logging.setup import setup as setup_logging
@@ -25,11 +26,11 @@ from app.services.history import HistoryAdded, HistoryService
 from app.services.media_info import MediaInfoService
 from app.services.queue import QueueEvent, QueueService
 from app.services.settings import SettingsChanged, SettingsService
-from app.services.updates import Component, UpdateService
+from app.services.updates import AppUpdateChanged, AppUpdateService, Component, UpdateService
 
 log = logging.getLogger(__name__)
 
-Event = QueueEvent | HistoryAdded | SettingsChanged
+Event = QueueEvent | HistoryAdded | SettingsChanged | AppUpdateChanged
 
 
 @dataclass(frozen=True)
@@ -39,11 +40,13 @@ class Backend:
     settings: SettingsService
     history: HistoryService
     updates: UpdateService
+    app_update: AppUpdateService
     external: ExternalService
 
     def start(self) -> None:
         """Call once, before anything is added to the queue."""
         self.queue.start()
+        self.app_update.clean()
 
     def shutdown(self) -> None:
         self.queue.shutdown()
@@ -96,6 +99,10 @@ def build(
             (Component("Noto Sans TC", "OFL-1.1"), None),
             (Component("Bricolage Grotesque", "OFL-1.1"), None),
         ],
+        JsonFile(local_dir / "engine-update.json"),
+    )
+    app_update = AppUpdateService(
+        updates.check_app_update, AppInstaller(local_dir / "updates"), emit
     )
     external = ExternalService(WindowsShell(), queue.file_path, history.file_path, log_file)
-    return Backend(media_info, queue, settings, history, updates, external)
+    return Backend(media_info, queue, settings, history, updates, app_update, external)
