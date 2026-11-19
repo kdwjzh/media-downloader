@@ -7,12 +7,19 @@ checks the app for it, and a test installer is named so that it cannot pass for 
 """
 
 import ast
+import importlib.util
 import re
 from pathlib import Path
 
 from app.infrastructure import releases
 
 ROOT = Path(__file__).resolve().parents[2]
+_spec = importlib.util.spec_from_file_location(
+    "build_installer", ROOT / "scripts" / "build_installer.py"
+)
+assert _spec and _spec.loader
+build_installer = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(build_installer)
 BUILD = (ROOT / "scripts" / "build_installer.py").read_text(encoding="utf-8")
 SPEC = (ROOT / "packaging" / "media-downloader.spec").read_text(encoding="utf-8")
 ISS = (ROOT / "packaging" / "installer.iss").read_text(encoding="utf-8-sig")
@@ -58,3 +65,21 @@ def test_without_the_marker_the_source_is_github_over_https() -> None:
     assert releases.GITHUB.download.startswith("https://github.com/")
     assert not releases.GITHUB.loopback_http
     assert "127.0.0.1" not in repr(releases.GITHUB)
+
+
+def test_a_release_build_has_only_the_two_files_and_no_marker() -> None:
+    check = build_installer.check_release_output
+    name = "MediaDownloader-Setup-1.0.0-rc.2.exe"
+    good = [name, f"{name}.sha256"]
+    assert check("1.0.0-rc.2", "_internal/index.html", good) == []
+    assert check("1.0.0-rc.2", f"_internal/{releases.TEST_MARKER}", good)
+    assert check("1.0.0-rc.2", "", good)
+    assert check("1.0.0-rc.2", "x", [*good, "extra.txt"])
+    assert check("1.0.0-rc.2", "x", [name])
+    assert check("1.0.0-beta", "x", ["MediaDownloader-Setup-1.0.0-beta.exe",
+                                     "MediaDownloader-Setup-1.0.0-beta.exe.sha256"])
+
+
+def test_the_workflows_never_build_a_test_installer() -> None:
+    for workflow in (ROOT / ".github" / "workflows").glob("*.yml"):
+        assert "test-update-source" not in workflow.read_text(encoding="utf-8"), workflow.name

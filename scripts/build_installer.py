@@ -11,6 +11,10 @@ Needs Node, uv (with the build group) and Inno Setup 7 (ISCC.exe). Run from anyw
 GitHub (scripts/manual/serve_update.py; docs/decisions/0019). Its installer is named
 ...-TEST.exe and must never be uploaded. Without the option the build fails if the marker
 somehow ended up in the app.
+
+Without it the build also checks it is fit for upload: packaging/output/ holds only the
+installer and its .sha256, and the installer's file list (build/installer-manifest.txt) has
+no marker. The release workflow adds --release-tag v<version>, which must match __version__.
 """
 
 import argparse
@@ -67,12 +71,32 @@ def installer_name(app_version: str, test: bool) -> str:
     return f"MediaDownloader-Setup-{app_version}{'-TEST' if test else ''}.exe"
 
 
+def check_release_output(app_version: str, manifest: str, files: list[str]) -> list[str]:
+    """What is wrong with a build meant for upload (empty when nothing is)."""
+    name = installer_name(app_version, test=False)
+    problems = []
+    if not re.fullmatch(r"MediaDownloader-Setup-\d+\.\d+\.\d+(-rc\.\d+)?\.exe", name):
+        problems.append(f"unexpected installer name {name}")
+    if sorted(files) != sorted([name, f"{name}.sha256"]):
+        problems.append(f"output should be {name} and its .sha256, found {sorted(files)}")
+    if TEST_MARKER in manifest:
+        problems.append(f"the installer contains {TEST_MARKER}")
+    if not manifest.strip():
+        problems.append("the installer manifest is empty")
+    return problems
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--test-update-source", action="store_true",
                         help="a test build that updates from 127.0.0.1 (never upload it)")
-    test = parser.parse_args().test_update_source
+    parser.add_argument("--release-tag", metavar="TAG",
+                        help="fail unless TAG is v<__version__> (used by the release workflow)")
+    args = parser.parse_args()
+    test = args.test_update_source
     app_version = version()
+    if args.release_tag is not None and (test or args.release_tag != f"v{app_version}"):
+        sys.exit(f"tag {args.release_tag} must be v{app_version}, without --test-update-source")
     numbers = app_version.split("-")[0]  # Windows file versions are numbers only
     iscc = next((path for path in ISCC if path.is_file()), None)
     if iscc is None:
@@ -108,6 +132,11 @@ def main() -> int:
     digest = hashlib.sha256(installer.read_bytes()).hexdigest()
     (OUTPUT / f"{installer.name}.sha256").write_text(f"{digest}  {installer.name}\n")
     print(f"\n{installer}\n  {installer.stat().st_size:,} bytes\n  SHA-256 {digest}")
+    if not test:
+        manifest = (BUILD / "installer-manifest.txt").read_text(encoding="utf-8", errors="replace")
+        files = [path.name for path in OUTPUT.iterdir()]
+        if problems := check_release_output(app_version, manifest, files):
+            sys.exit("not fit for upload:\n  " + "\n  ".join(problems))
 
     if DEFENDER.is_file():
         run([str(DEFENDER), "-Scan", "-ScanType", "3", "-File", str(installer),

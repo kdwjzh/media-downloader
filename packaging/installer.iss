@@ -33,6 +33,9 @@ OutputBaseFilename=MediaDownloader-Setup-{#AppVersion}-TEST
 #else
 OutputBaseFilename=MediaDownloader-Setup-{#AppVersion}
 #endif
+; Lists every file compiled into setup; scripts/build_installer.py checks the test marker
+; is not in it. Kept in build\ so output\ holds only the files to upload.
+OutputManifestFile={#SourcePath}..\build\installer-manifest.txt
 SetupIconFile=..\brand\icons\app.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName=Media Downloader

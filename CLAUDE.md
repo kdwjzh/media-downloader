@@ -228,6 +228,11 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 - 換 FFmpeg 版本時，`fetch_binaries.py` 與 `packaging/licenses/FFmpeg-SOURCE.txt` 一起改（原始碼連結要指到實際附帶的那一版）。
 - `installer.iss` 有中文，存成 UTF-8 加 BOM。
 - `main.py` 建立的 mutex 名稱與 `installer.iss` 的 `AppMutexName` 要一致。
+- 發佈由 `.github/workflows/release.yml` 打包（依據見 `0020`）：推 `v*` tag 建 draft Release，手動觸發只放 artifact。上傳的只有安裝檔與同名 `.sha256`；workflow 絕不加 `--test-update-source`（`test_update_source.py` 擋）。
+- `build_installer.py` 不加 `--test-update-source` 時會檢查 `packaging/output/` 只有那兩個檔案、Inno 的檔案清單（`OutputManifestFile`）裡沒有標記檔；`--release-tag` 要等於 `v<__version__>`。不要拿掉這些檢查。
+- uv.lock 的版本是 PEP 440 的寫法（`1.0.0rc1`），`test_version.py` 正規化後比對；三處一起改。
+- workflow 的 Actions 固定到 commit SHA；Inno Setup（7.1.1）與 gitleaks（8.30.1）寫死版本與 SHA-256。升級時一起換掉雜湊。
+- exe 的版本資訊由 spec 從 `__version__` 產生，數字版本只放前三段（rc 與正式版都是 `x.y.z.0`）。不放 email 或個人資料。
 
 ### App 更新（依據見 `docs/decisions/0019`）
 
