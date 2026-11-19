@@ -7,6 +7,7 @@ test build's update source on 127.0.0.1 (releases.py, docs/decisions/0019).
 
 import hashlib
 import http.client
+import ssl
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping, Sequence
@@ -14,7 +15,12 @@ from pathlib import Path
 from typing import IO
 from urllib.parse import urlsplit
 
+import truststore
+
 MAX_REDIRECTS = 5
+# Windows verifies the certificates, as browsers do: Python's own check only knows the roots
+# already in the Windows store, so a clean Windows that lacks one fails (docs/decisions/0020).
+_TLS = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 _CHUNK = 64 * 1024
 LOOPBACK = "127.0.0.1"
 
@@ -67,7 +73,9 @@ def _open(
     loopback_http: bool,
 ) -> IO[bytes]:
     check(url, allowed_hosts, loopback_http)
-    opener = urllib.request.build_opener(_CheckedRedirects(allowed_hosts, loopback_http))
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPSHandler(context=_TLS), _CheckedRedirects(allowed_hosts, loopback_http)
+    )
     request = urllib.request.Request(
         url, headers={"User-Agent": "media-downloader", **(headers or {})}
     )

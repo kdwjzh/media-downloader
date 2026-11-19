@@ -5,6 +5,7 @@ description = "Windows desktop downloader for music and video"
 requires-python = ">=3.12"
 dependencies = [
     "pywebview>=6.2.1",
+    "truststore>=0.10.5",
 ]
 
 [tool.uv]

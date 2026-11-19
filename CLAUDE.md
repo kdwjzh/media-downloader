@@ -127,7 +127,7 @@ scripts/             一鍵檢查、下載外部程式、開發用指令
 10. 引擎不直接碰 `DownloadTask`：它回報事件，由服務層套用到任務上。
 11. 成品路徑不交給介面；介面用任務編號或歷史紀錄編號叫後端開啟資料夾。
 12. `services/` 不 import `infrastructure/`：需要的東西在 `services/ports.py` 定義成介面，由 `composition.py` 接上真的實作。
-13. App 自己連網路只能經由 `infrastructure/http.py`（https、主機允許清單、轉址最多 5 次且每次重新檢查、大小上限）。
+13. App 自己連網路只能經由 `infrastructure/http.py`（https、主機允許清單、轉址最多 5 次且每次重新檢查、大小上限）。憑證由 truststore 交給 Windows 驗證，不要改回 Python 預設的 SSL 設定：乾淨的 Windows 缺根憑證時會失敗（`0020`）。
 
 介面與後端各有一份的常數（格式、音質、畫質、九種狀態、13 個錯誤代碼、可以重試的錯誤）在 `backend/app/domain/` 與 `frontend/src/types.ts`，要一起改。
 狀態轉換表有三處要一致：`domain/task.py` 的 `TRANSITIONS`、約定第 6 節、`架構.md` 的狀態圖。

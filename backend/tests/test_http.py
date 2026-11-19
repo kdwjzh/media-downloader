@@ -132,6 +132,26 @@ def serve(monkeypatch: pytest.MonkeyPatch, answer: object) -> list[str]:
     return asked
 
 
+def test_https_is_verified_by_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Bug (stage 5c, Windows Sandbox): no history thumbnails, CERTIFICATE_VERIFY_FAILED.
+    # Python's own check only knows the roots already in the Windows store and never lets
+    # Windows fetch a missing one, as browsers do. truststore asks Windows to verify.
+    handlers: list[object] = []
+
+    class Opener:
+        def open(self, request: urllib.request.Request, timeout: float) -> object:
+            return Answer(b"x", 1)
+
+    def build(*given: object) -> Opener:
+        handlers.extend(given)
+        return Opener()
+
+    monkeypatch.setattr(urllib.request, "build_opener", build)
+    http.get("https://github.com/x", GITHUB, 10, 5)
+    contexts = [h._context for h in handlers if isinstance(h, urllib.request.HTTPSHandler)]  # type: ignore[attr-defined]
+    assert [type(c).__module__.split(".")[0] for c in contexts] == ["truststore"]
+
+
 def fetch(dest: Path, max_bytes: int = 10_000, cancel_after: int | None = None) -> object:
     seen: list[int] = []
 
