@@ -12,6 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-20
+
 The first public version of Media Downloader, a Windows app that downloads music (MP3) and video (MP4) from YouTube.
 
 ### Added
@@ -53,3 +55,6 @@ The first public version of Media Downloader, a Windows app that downloads music
 - Keyboard and screen reader support throughout: visible focus, announced status changes (not percentages), the full title of a cut-off row on focus.
 - The app's own network requests verify certificates with Windows, like a browser.
 - The log masks your user folder in paths.
+
+[Unreleased]: https://github.com/kdwjzh/media-downloader/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/kdwjzh/media-downloader/releases/tag/v1.0.0
