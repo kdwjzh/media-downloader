@@ -51,7 +51,7 @@
     - 一直是同一顆按鈕，只換文字與動作，焦點留在它上面。
   - yt-dlp 那一列有「檢查更新」。按下後變成「檢查中…」並停用（`aria-disabled`，焦點留在按鈕上），下方一行「可能要二十秒左右」；結果顯示在那一列下方，到下一次檢查：「已是最新版」、「已更新到 x」、`network` 用 `settings.updateFailed`、其他用 `settings.updateFailedUnknown` 加「開啟記錄檔」。失敗時按鈕寫「重試」。
 - 版本（App、yt-dlp、元件清單）第一次進這個畫面才讀（約 1.5 秒），讀取中用骨架佔位。
-- 關於：App 名稱與版本、授權 MIT、使用的元件與各自的授權與版本（yt-dlp、FFmpeg、Deno、Noto Sans TC、Bricolage Grotesque）、「原始碼」、「開啟記錄檔資料夾」（兩顆次要按鈕）。
+- 關於：App 名稱與版本、授權 MIT、使用的元件與各自的授權與版本（yt-dlp、FFmpeg、Deno、Noto Sans TC、Bricolage Grotesque），表格下方一行次要文字說明所有授權全文在安裝資料夾的 `licenses`、「原始碼」、「開啟記錄檔資料夾」（兩顆次要按鈕）。
 
 ## 文案
 
@@ -95,6 +95,7 @@
 | `settings.componentName` | 名稱 | Name |
 | `settings.version` | 版本 | Version |
 | `settings.aboutFailed` | 無法讀取版本資訊。 | Couldn't read the version information. |
+| `settings.otherLicenses` | 所有授權全文（包括其他開放原始碼元件）都在 App 安裝資料夾的 licenses 資料夾。 | The full license texts, including those of other open-source parts, are in the licenses folder where the app is installed. |
 | `settings.folderNotWritable` | 這個資料夾無法寫入，請選其他資料夾。 | This folder can't be written to. Choose another folder. |
 | `settings.keptOldFolder` | 已換成新的下載資料夾。佇列裡還沒完成的 {{count, number}} 個項目仍會存到原本的資料夾。 | Download folder changed. The {{count, number}} unfinished items in the queue still go to the old folder.（單數另有一句） |
 

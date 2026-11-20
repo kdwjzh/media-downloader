@@ -226,6 +226,7 @@
     "componentName": "名稱",
     "version": "版本",
     "aboutFailed": "無法讀取版本資訊。",
+    "otherLicenses": "所有授權全文（包括其他開放原始碼元件）都在 App 安裝資料夾的 licenses 資料夾。",
     "sourceCode": "原始碼",
     "openLogFolder": "開啟記錄檔資料夾",
     "folderNotWritable": "這個資料夾無法寫入，請選其他資料夾。",

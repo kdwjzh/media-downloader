@@ -70,6 +70,8 @@ Type: filesandordirs; Name: "{app}\_internal"
 [Files]
 Source: "..\build\dist\MediaDownloader\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion
+; Made by build_installer.py: the Python and npm packages inside the app.
+Source: "..\build\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}\licenses"; DestName: "MediaDownloader-LICENSE.txt"; Flags: ignoreversion
 ; No ignoreversion: Inno compares the file versions and keeps an existing yt-dlp.exe that
 ; is as new or newer (the user updated it), replacing only an older one.

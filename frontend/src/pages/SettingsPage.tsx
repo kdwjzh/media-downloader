@@ -404,24 +404,27 @@ function AboutSection() {
             <Button onClick={() => void loadAbout(true)}>{t('action.retry')}</Button>
           </>
         ) : about ? (
-          <table className="w-full text-xs leading-4">
-            <thead className="text-left text-text-muted">
-              <tr>
-                <th className="pb-1 font-normal">{t('settings.componentName')}</th>
-                <th className="pb-1 font-normal">{t('settings.license')}</th>
-                <th className="pb-1 font-normal">{t('settings.version')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {about.components.map((c) => (
-                <tr key={c.name}>
-                  <td className="py-0.5 pr-3 whitespace-nowrap">{c.name}</td>
-                  <td className="py-0.5 pr-3 whitespace-nowrap">{c.license}</td>
-                  <td className="py-0.5 tabular-nums wrap-anywhere">{c.version}</td>
+          <>
+            <table className="w-full text-xs leading-4">
+              <thead className="text-left text-text-muted">
+                <tr>
+                  <th className="pb-1 font-normal">{t('settings.componentName')}</th>
+                  <th className="pb-1 font-normal">{t('settings.license')}</th>
+                  <th className="pb-1 font-normal">{t('settings.version')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {about.components.map((c) => (
+                  <tr key={c.name}>
+                    <td className="py-0.5 pr-3 whitespace-nowrap">{c.name}</td>
+                    <td className="py-0.5 pr-3 whitespace-nowrap">{c.license}</td>
+                    <td className="py-0.5 tabular-nums wrap-anywhere">{c.version}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs leading-4 text-text-muted">{t('settings.otherLicenses')}</p>
+          </>
         ) : (
           <div aria-hidden="true" className="flex w-full flex-col gap-2">
             {[1, 2, 3, 4, 5].map((n) => (

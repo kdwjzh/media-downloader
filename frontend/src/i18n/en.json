@@ -226,6 +226,7 @@
     "componentName": "Name",
     "version": "Version",
     "aboutFailed": "Couldn't read the version information.",
+    "otherLicenses": "The full license texts, including those of other open-source parts, are in the licenses folder where the app is installed.",
     "sourceCode": "Source code",
     "openLogFolder": "Open log folder",
     "folderNotWritable": "This folder can't be written to. Choose another folder.",

@@ -2,7 +2,8 @@
 
 Steps: delete build/ and packaging/output/ -> npm ci + npm run build -> fetch the pinned
 external programs into build/bin -> PyInstaller into build/dist -> check nothing is missing
--> Inno Setup into packaging/output/ -> SHA-256 file -> Defender scan.
+-> third-party licenses into build/licenses -> Inno Setup into packaging/output/ -> SHA-256
+file -> Defender scan.
 
 Needs Node, uv (with the build group) and Inno Setup 7 (ISCC.exe). Run from anywhere:
     python scripts/build_installer.py
@@ -24,6 +25,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
+from importlib import metadata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,6 +47,9 @@ ISCC = [
 DEFENDER = Path(os.environ.get("ProgramFiles", "")) / "Windows Defender" / "MpCmdRun.exe"
 # Must match TEST_MARKER in packaging/media-downloader.spec and backend/app/infrastructure/releases.py.
 TEST_MARKER = "update-source-test"
+LICENSE_FILE = re.compile(r"(?i)^(licen[cs]e|copying|notice)")
+# Packages that ship no license file, with the one kept in packaging/licenses instead.
+SEPARATE_LICENSES = {"proxy-tools": "proxy_tools-LICENSE.txt"}
 
 
 def version() -> str:
@@ -96,6 +102,64 @@ def write_checksum(installer: Path) -> str:
     return digest
 
 
+def _key(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def _names(requirements: list[str]) -> list[str]:
+    """Package names of requirement strings, leaving out the ones only an extra asks for."""
+    return [re.match(r"[A-Za-z0-9._-]+", r)[0] for r in requirements if "extra ==" not in r]  # type: ignore[index]
+
+
+def python_licenses(site: Path, separate: set[str]) -> tuple[str, list[str]]:
+    """The license files of backend/pyproject.toml's dependencies and what they need, as
+    installed in site, in one text; and the packages that have none. Requirements that are
+    not installed are skipped: their platform markers (macOS, Linux) did not match."""
+    installed = {_key(d.metadata["Name"]): d for d in metadata.distributions(path=[str(site)])}
+    project = tomllib.loads((ROOT / "backend" / "pyproject.toml").read_text(encoding="utf-8"))
+    todo, seen, parts, missing = _names(project["project"]["dependencies"]), set(), [], []
+    while todo:
+        key = _key(todo.pop())
+        if key in seen or key not in installed:
+            continue
+        seen.add(key)
+        dist = installed[key]
+        todo += _names(dist.requires or [])
+        files = [f for f in dist.files or [] if ".dist-info" in str(f) and LICENSE_FILE.match(f.name)]
+        texts = [Path(str(dist.locate_file(f))).read_text(encoding="utf-8") for f in files]
+        if not texts and key not in separate:
+            missing.append(key)
+        header = f"{dist.metadata['Name']} {dist.version}"
+        note = "\n(see its own file in this folder)\n" if not texts else ""
+        parts.append(f"{'=' * 72}\n{header}\n{'=' * 72}\n{note}" + "\n".join(texts))
+    return "\n\n".join(sorted(parts, key=str.lower)), missing
+
+
+def write_licenses() -> None:
+    """build/licenses: the Python packages and Python itself, and the npm packages bundled
+    into the page. The installer puts them in {app}\\licenses with packaging/licenses."""
+    venv = ROOT / "backend" / ".venv"
+    home = re.search(r"^home = (.+)$", (venv / "pyvenv.cfg").read_text(encoding="utf-8"), re.M)
+    python = Path(home[1].strip()) / "LICENSE.txt" if home else Path()
+    separate = {_key(n) for n in SEPARATE_LICENSES}
+    text, missing = python_licenses(venv / "Lib" / "site-packages", separate)
+    frontend = ROOT / "frontend" / "dist" / "third-party-licenses.md"
+    if missing or not python.is_file() or not frontend.is_file():
+        sys.exit(f"license text missing: {missing or ''} {python} {frontend}")
+    for name in SEPARATE_LICENSES.values():
+        if not (ROOT / "packaging" / "licenses" / name).is_file():
+            sys.exit(f"packaging/licenses/{name} is missing")
+    out = BUILD / "licenses"
+    out.mkdir(parents=True, exist_ok=True)
+    python_text = python.read_text(encoding="utf-8", errors="replace")
+    (out / "ThirdParty-Python.txt").write_text(
+        f"Python packages in Media Downloader\n\n{text}\n\n{'=' * 72}\nPython runtime\n"
+        f"{'=' * 72}\n{python_text}",
+        encoding="utf-8",
+    )
+    shutil.copyfile(frontend, out / "ThirdParty-Frontend.md")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--test-update-source", action="store_true",
@@ -131,6 +195,7 @@ def main() -> int:
         sys.exit("missing from the packaged app:\n  " + "\n  ".join(gone))
     if (APP / "_internal" / TEST_MARKER).is_file() != test:
         sys.exit(f"the test update source is {'missing from' if test else 'in'} the app")
+    write_licenses()
     run(
         [
             str(iscc), f"/DAppVersion={app_version}", f"/DVersionNumbers={numbers}",

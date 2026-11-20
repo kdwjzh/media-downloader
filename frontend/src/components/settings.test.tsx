@@ -344,6 +344,8 @@ test('the versions are read once, the first time the screen shows', async () => 
   expect(table.getByRole('row', { name: /FFmpeg GPL-3.0-or-later N-128757/ })).toBeTruthy()
   expect(table.getByRole('row', { name: 'Noto Sans TC OFL-1.1' })).toBeTruthy()
   expect(inPage().getByText('0.1.0, MIT License')).toBeTruthy()
+  // The table lists the main parts; the rest are only in the licenses folder.
+  expect(inPage().getByText(/other open-source parts, are in the licenses folder/)).toBeTruthy()
 })
 
 async function checkYtDlp(answer: unknown) {
