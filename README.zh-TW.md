@@ -34,8 +34,7 @@
    ```
 
    兩串長字串要相同（第一串是大寫，不影響）。Linux 或 macOS：`sha256sum -c MediaDownloader-Setup-<版本>.exe.sha256`（macOS 用 `shasum -a 256 -c …`）要顯示 `OK`。
-3. 執行安裝檔。安裝檔沒有程式碼簽章，Windows 可能會出現藍色的「**Windows 已保護您的電腦**」視窗。按「**其他資訊**」，確認應用程式是 `MediaDownloader-Setup-<版本>.exe`，再按「**仍要執行**」。
-   <!-- 5d：確切文字要對照 Windows Sandbox 的截圖。 -->
+3. 執行安裝檔。安裝檔沒有程式碼簽章，Windows 可能會出現藍色的「**Windows 已保護您的電腦**」視窗。按「**其他資訊**」，確認應用程式是 `MediaDownloader-Setup-<版本>.exe`（發行者會顯示「**不明的發行者**」），再按「**仍要執行**」。
 4. 照安裝程式的步驟進行。只裝給目前的使用者，不需要系統管理員權限：
    - App：`%LOCALAPPDATA%\Programs\Media Downloader`
    - yt-dlp、FFmpeg、Deno：`%LOCALAPPDATA%\media-downloader\bin`

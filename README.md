@@ -34,8 +34,7 @@ A Windows desktop app for downloading music (MP3) and video (MP4) from YouTube. 
    ```
 
    The two long strings must be the same (the first is in capitals, which doesn't matter). On Linux or macOS: `sha256sum -c MediaDownloader-Setup-<version>.exe.sha256` (macOS: `shasum -a 256 -c …`) must print `OK`.
-3. Run the installer. The installer isn't code-signed, so Windows may show a blue **Windows protected your PC** window. Choose **More info**, check that the app is `MediaDownloader-Setup-<version>.exe`, then choose **Run anyway**.
-   <!-- 5d: confirm the exact wording against the Windows Sandbox screenshots. -->
+3. Run the installer. The installer isn't code-signed, so Windows may show a blue **Windows protected your PC** window. Choose **More info**, check that the app is `MediaDownloader-Setup-<version>.exe` (the publisher shows as **Unknown publisher**), then choose **Run anyway**.
 4. Follow the installer. It installs for your user only and doesn't need administrator rights:
    - The app: `%LOCALAPPDATA%\Programs\Media Downloader`
    - yt-dlp, FFmpeg and Deno: `%LOCALAPPDATA%\media-downloader\bin`
