@@ -1,119 +1,55 @@
 <!--
-這個檔案是什麼：media-downloader 的改版紀錄，每個版本一節（Keep a Changelog 格式）。
-使用者看得到的改動寫進 [Unreleased]；發版時改成 [x.y.z] - YYYY-MM-DD。
-Release 說明從這裡取。
-推上 GitHub：可以。公開前改寫成英文。
+What this file is: the change log of media-downloader, one section per version (Keep a Changelog format).
+Changes users can see go into [Unreleased]; on release it becomes [x.y.z] - YYYY-MM-DD.
+Release notes are taken from here.
+Published on GitHub: yes.
 -->
 
-# 改版紀錄
+# Changelog
 
-這個專案所有值得注意的改動都記在這裡。
-格式依照 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，版本號依照 [語意化版本](https://semver.org/lang/zh-TW/)。
+All notable changes to this project are recorded here.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### 新增
+The first public version of Media Downloader, a Windows app that downloads music (MP3) and video (MP4) from YouTube.
 
-- 專案骨架：pywebview 視窗載入 React 介面，畫面顯示 App 名稱與後端連線狀態（繁體中文、英文）。
-- 開發用指令 `scripts/dev.py`、一鍵檢查 `scripts/check.py`、CI 與 gitleaks 的 pre-commit 檢查。
-- MIT 授權。
-- 設計規範（`design-system/media-downloader/`）：視覺方向「唱片封套」、顏色與字體、各畫面的版面規則與中英文介面文案。
-- 主畫面的靜態樣張：網址列、預覽、佇列與空畫面，使用假資料，可切換各種狀態與語言；按鈕還沒有作用。
-- 介面字體隨 App 附帶（Noto Sans TC、Bricolage Grotesque），MP3 的縮圖顯示成正方形封面。
-- App 圖示（`brand/`）：梅紫的方唱片，中間的溝槽是一條四分之三的進度條；附 Windows 用的多尺寸 `app.ico`。打包時才會用上。
-- 介面與後端的約定（`docs/介面與後端的約定.md`）：24 個指令、5 種事件與資料形狀。
-- 後端的領域層：下載任務的狀態機（九種狀態）、錯誤代碼、下載進度的算法（MP4 的影像與聲音合成一條進度）、下載引擎的介面。還沒有接上介面。
-- 後端的 yt-dlp 下載引擎：查詢影片與播放列表、下載 MP3 與 MP4、取消、錯誤分類、更新 yt-dlp。還沒有接上佇列與介面，目前只能用 `scripts/manual/engine.py` 操作。
-  - 只接受 YouTube 的網址。
-  - 檔名只用影片標題；檔名重複時可以略過、覆蓋或自動改名（`歌名 (1).mp3`）。
-  - MP3 內嵌的封面置中裁成正方形。
-  - 下載中的暫存檔放在下載資料夾裡的隱藏資料夾，結束後自動刪除。
-  - App 被強制結束時，進行中的下載程序會一起結束，不會留在背景。
-  - 下載資料夾不能用、要覆蓋的檔案被別的程式開著、磁碟滿了時，這個項目會顯示成失敗（未知錯誤），原因寫進記錄檔。
-- 後端的下載佇列：一次排多個網址、同時下載數 1–5（執行中可以調整，預設 3）、取消、重試、重新加入、移除、清除已結束的；進度每 0.5 秒最多更新一次。還沒有接上介面，目前只能用 `scripts/manual/download_queue.py` 操作。
-  - 只有網址的項目會先在背景查標題與縮圖，同時最多查 2 個。
-  - 貼上的網址會先整理：去掉前後空白，沒有 `https://` 的自動補上。
-  - 預覽還沒查完就被加入的網址如果是播放列表，會顯示「這是播放列表的網址」，不會自動排進整張清單。
-  - 啟動時清掉上次異常結束留下的暫存資料夾。
-- 後端的設定：下載資料夾、同時下載數、檔名重複的處理、上次用的格式與音質／畫質、介面語言會存檔，下次開啟還在。設定檔壞掉時改名留存，用預設值繼續。
-- 後端的歷史紀錄：每次下載完成記一筆（含一張小縮圖），可以列出、重新下載、刪除單筆、清空；刪除紀錄不會刪掉下載的檔案。資料庫壞掉時改名留存，從空的開始。
-- 記錄檔：失敗的下載會留下 yt-dlp 的原始訊息。寫入前會把使用者資料夾的路徑遮掉；1 MB 換檔，保留 3 份舊檔。
-- App 新版檢查：向 GitHub 查最新發佈，結果會存一天，不會每次開啟都連網路；查不到時當成沒有新版。
-- 關於頁的資料：App 版本，以及 yt-dlp、FFmpeg、Deno 與兩個字體的授權與版本。
-- 開啟資料夾並選中下載的檔案；檔案被搬走時改開資料夾。開啟記錄檔與它的資料夾。
-- 同時下載數的上限從 3 放寬到 5（預設仍是 3）。
-- 介面接上後端的管道（橋接層）：介面可以叫後端的全部指令，也收得到後端的事件。畫面仍是階段 2 的樣張，還沒接真資料。
-- 關閉視窗時如果還有下載沒結束，介面會收到通知可以先問使用者。
-- 選到不能寫入的下載資料夾時會回報錯誤，不會什麼都沒發生。
-- 主畫面接上真的後端，可以實際下載：貼網址、預覽（真的縮圖、這支影片實際有的畫質與預估大小）、加入佇列，佇列的每種狀態與取消、重試、重新加入、移除、清除已結束的、開啟資料夾、開啟記錄檔。
-  - 預覽的格式與畫質帶入上次用的。預覽還沒加入時又貼了新網址：查到的自動加入、還在查的也加入、失敗的直接換掉。
-  - 在視窗任何地方按 Ctrl+V 就會查詢貼上的網址；貼的不是網址時會提示，不會查詢。
-  - 剛輪到還沒開始傳資料時顯示「準備下載…」，不會停在「下載中 0%」；拿不到百分比的下載顯示已下載的大小與速度。
-  - 還有下載沒結束時按關閉，會先問要不要停止並關閉。
-  - 開啟資料夾時找不到檔案，會用一則短暫的提示說明改開了資料夾，或什麼都沒開。
-  - 畫面某個部分出錯時只換掉那一塊，可以重新載入畫面；下載不受影響，視窗也一定關得掉。
-  - 用鍵盤操作時看得到被截斷的完整標題；螢幕閱讀器會唸出完成、失敗、連線中斷等變化（不唸百分比）。
-- 播放列表與頻道的勾選畫面：貼上播放列表或頻道網址後列出全部影片，可以勾選要下載哪些，整批用同一種格式與音質／畫質加入佇列。
-  - 預設全部勾選；全選框有全選、部分、全不選三種狀態。
-  - 私人或已刪除的影片顯示成「無法下載」，不能勾選，也不算在總數裡。
-  - MP4 列出全部畫質，寫成「最高 1080p」這種上限，每支影片用它有的、不超過上限的最高畫質。
-  - 幾千支的列表也捲得動（只畫看得到的那幾列）。
-  - 鍵盤：Tab 進清單，上下鍵、Home、End、PgUp、PgDn 移動，空白鍵勾選。
-  - 勾選畫面開著時又貼了新網址，會直接查新的，不會加入佇列。
-  - 加入後回到主畫面，螢幕閱讀器會唸出加入了幾個。
-- 查詢超過 5 秒時顯示已等了幾秒，說明播放列表或頻道的影片很多時要等比較久。
-- 佇列的「取消全部」：先跳確認視窗，再取消所有還沒結束的項目。很多項目同時改變時，畫面一次更新（取消 5,339 個約 10 秒）。
-- 佇列很長時也只畫看得到的那幾列，加入幾千個項目後畫面不會變慢。
-- 左側導覽可以切換「下載」「歷史紀錄」「設定」。切到別的畫面再回來，查詢中的預覽、勾到一半的播放列表、網址框的內容與佇列的捲動位置都還在。
-- 導覽列的「下載」顯示還有幾個項目沒完成。
-- 在其他畫面按 Ctrl+V 貼上網址，會切回「下載」並開始查詢。
-- 歷史紀錄畫面：最新的在最上面，顯示完成時間（當地時間、跟著介面語言）與檔案大小；每筆可以重新下載、開啟資料夾、刪除這筆紀錄；清空紀錄前先確認。下載的檔案都不會被刪除。在刪除按鈕上按住 Enter 只會刪一筆。
-  - 重新下載用當時的格式與音質／畫質直接加入佇列，那一筆會標示「已加入佇列」。
-  - 下載完成時，清單會自己多一筆。
-  - 沒有紀錄時可以按「前往下載」回到網址框。
-- 設定畫面：改了就生效，沒有儲存按鈕。
-  - 下載資料夾（太長時從中間省略）；選到不能寫入的資料夾會在那一列下方說明。換資料夾時，已經在佇列裡的項目仍存到原本的資料夾，有這種項目時會提示。
-  - 同時下載數 1–5、檔名重複時略過／覆蓋／自動改名（選覆蓋時提醒無法復原）。
-  - 預設格式與音質／畫質，跟主畫面預覽「記住上次用的」是同一組值。
-  - 介面語言：跟隨系統、繁體中文、English，切換後所有畫面立刻換語言。
-  - App 有新版時，導覽列的「設定」出現圓點，設定頁顯示新版本與「前往下載」；不彈窗、不自動下載，查不到時當成沒有新版。
-  - 更新 yt-dlp：檢查時說明可能要二十秒，結果與失敗原因留在那一列；下載進行中也可以更新。
-  - 關於：App 版本與授權、五個第三方元件的授權與版本、原始碼、開啟記錄檔資料夾。
-- 階段 3 的驗收紀錄（`docs/階段3-驗收.md`）與給階段 4 的交接（`docs/階段4-交接.md`）。
-- 安裝檔（`python scripts/build_installer.py`）：只裝給目前的使用者、不需要系統管理員權限，開始功能表有捷徑，安裝程式的語言跟隨系統（繁體中文、英文）。
-  - yt-dlp、FFmpeg、Deno 放在 `%LOCALAPPDATA%\media-downloader\bin`；重新安裝或更新 App 時，比較新的 yt-dlp 不會被換回舊版。
-  - 解除安裝時會問要不要一併刪除設定、歷史紀錄與記錄檔，預設留下。
-  - App 還開著時，安裝與解除安裝會先請你關掉 App。
-  - 電腦上沒有 WebView2 時，安裝程式會提示到微軟網站下載。
-  - 安裝資料夾附上 App 與五個第三方元件的授權全文，以及 FFmpeg 原始碼的取得方式。
-- 外部程式被刪掉（例如被防毒軟體移除）時，App 開啟時會說明並請你重新安裝。
+### Added
 
-- App 的一鍵更新：有新版時設定頁顯示「立即更新」，App 自己下載新版的安裝檔、核對檢查碼，關閉後在背景安裝，裝完自動重新開啟。下載中可以看到進度、可以取消；檢查碼對不上時不會安裝，並說明原因。還有下載沒完成時先問。
-- 打包後的 App 啟動時自動更新 yt-dlp（一天最多一次，在背景進行，失敗不影響使用），並刪掉更新留下的 `yt-dlp.exe.old`。
-- 推 `v*` tag 時由 GitHub Actions 檢查、打包安裝檔與檢查碼，放進一個 draft Release（rc 版標成 pre-release）；也可以手動觸發只打包。
-- CI 用 gitleaks 掃完整的 git 歷史。
-- `MediaDownloader.exe` 有 Windows 版本資訊（產品名稱、版本、版權），在檔案內容的「詳細資料」看得到。
-
-### 變更
-
-- 版本號改為 `1.0.0-rc.1`（私下測試的第一個候選版本）。
-- 新版檢查照語意化版本比較，看得懂 `1.0.0-rc.1` 這類候選版本（`1.0.0-rc.1 < 1.0.0-rc.2 < 1.0.0`）。
-- App 自己連網路時跟隨轉址，但只能轉到允許的主機、最多 5 次。
-- 安裝程式在安裝檔案時不能取消（取消會讓 App 開不起來）。
-- FFmpeg 改成固定的版本（2026-10-31 的建置），不再跟著最新版變動。
-- 貼上播放列表網址時暫時顯示的「勾選畫面還沒完成」已換成真的勾選畫面。
-- 數字大於一千時加上千分位（例如「佇列（1,700）」）。
-- 主畫面的樣張與它的假資料、開發用的檢查面板已移除，畫面改用真的資料。
-- 英文介面的「未知錯誤」提示縮短，窄視窗也放得下。
-- 視窗預設大小改為 960x680，最小 720x520。
-
-### 修正
-
-- 在乾淨的 Windows 上，歷史紀錄沒有縮圖（App 自己連網路時，憑證驗證不會讓 Windows 補下載缺少的根憑證）。現在由 Windows 驗證憑證，跟瀏覽器一樣；新版檢查與一鍵更新也一樣受惠。
-- 失敗的項目只有一行訊息時（例如中文介面的「連不上網路」），警告圖示沒有跟文字對齊。
-- 最小視窗的英文介面裡，失敗項目的錯誤訊息會被截斷，只用鍵盤的人看不到下一步；現在焦點移到那一列的按鈕時，被截斷的部分（標題或錯誤訊息）會浮出全文；沒被截斷的不重複顯示。
-- 佇列裡用鍵盤按著某一列的按鈕時，那一列的狀態一變（例如下載失敗而且不能重試），焦點會掉到頁面上；現在焦點留在同一列的第一顆按鈕。
-- 佇列列內的按鈕按住 Enter 不放時，會在「取消」和「重新加入」之間來回切換；現在只認第一下。
-- 播放列表勾選畫面按住空白鍵不放時，勾選會一直切換；現在只認第一下（按住方向鍵仍會一直移動）。
-- 即將直播的影片原本顯示成「未知錯誤」並有重試按鈕，現在顯示「不支援直播」。
-- 同時下載多個項目時偶爾被 YouTube 拒絕（HTTP 403）而失敗：現在會自動再試一次，再失敗才顯示。
+- **Downloading**
+  - Paste a YouTube URL anywhere in the window with Ctrl+V, or type it into the URL box. A preview shows the thumbnail, title, channel and length.
+  - MP3 at 128, 192 or 320 kbps, with the cover embedded and cropped to a square.
+  - MP4 in the qualities that video actually has, with an estimated file size. 4K is VP9 inside MP4, which some players can't play.
+  - Format and quality remember what you used last.
+  - File names are the video title. When a file already exists: skip, overwrite or rename automatically (`Song (1).mp3`).
+  - Downloads finish in a hidden temporary folder, so the download folder never holds half-finished files.
+- **Queue**
+  - Queue many URLs at once, with 1–5 simultaneous downloads (3 by default).
+  - Each item shows its own progress and stage: waiting, downloading (with a real percentage), converting, merging.
+  - Cancel, retry, add again, remove, clear finished, cancel all (after a confirmation). Open the folder of a finished file.
+  - Errors say what happened and what to do next: private, age-restricted, members-only, region-blocked, removed, live stream, no connection. Unknown errors have "Open log file".
+  - A download refused by YouTube (HTTP 403) is tried once more by itself.
+  - Long queues stay fast: only the visible rows are drawn.
+  - Closing the window with unfinished downloads asks first.
+- **Playlists and channels**
+  - Paste a playlist or channel URL to list every video and tick the ones to download. Private or deleted videos are shown as unavailable.
+  - The whole selection uses one format; MP4 quality is an upper limit ("Up to 1080p").
+  - Works with lists of thousands of videos, and with the keyboard alone.
+- **History**
+  - Every finished download is listed with its thumbnail, time and size. Download again with the same format, open its folder, delete an entry or clear all. Downloaded files are never deleted.
+- **Settings**
+  - Download folder, simultaneous downloads, duplicate files, default format and quality, and language (match system, Traditional Chinese, English). Changes apply at once.
+  - About: version, licenses of the main third-party components, source code link, open log folder.
+- **Updates**
+  - When a new version is out, a dot appears next to Settings, and "Update now" downloads the installer, checks its SHA-256, installs it and reopens the app. Nothing happens until you choose it.
+  - yt-dlp updates itself when the app starts (at most once a day), and can be updated by hand in Settings.
+- **Installer**
+  - Installs for the current user only, without administrator rights. Start menu shortcut; the installer follows the system language (Traditional Chinese, English).
+  - Updating or reinstalling never replaces a newer yt-dlp with an older one.
+  - Uninstalling asks whether to delete your settings, history and log files (kept by default).
+  - Warns when WebView2 is missing and links to Microsoft's download.
+  - Includes the license texts of every bundled third-party component and how to get FFmpeg's source.
+  - Each release has a `.sha256` file that `sha256sum -c` (Linux, macOS) and PowerShell can check.
+- Keyboard and screen reader support throughout: visible focus, announced status changes (not percentages), the full title of a cut-off row on focus.
+- The app's own network requests verify certificates with Windows, like a browser.
+- The log masks your user folder in paths.

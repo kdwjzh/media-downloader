@@ -1,312 +1,315 @@
 <!--
-這個檔案是什麼：media-downloader 的專案規格書兼工作規則。
-Claude Code 每次開工會自動讀。
-規格或決定有變就更新；踩到坑就把「以後不要這樣做」寫成規則。
-推上 GitHub：可以，但不能放 token、個人路徑或帳號資料。公開前改寫成英文。
-程式和這份文件不一致時，要嘛改程式，要嘛改這份；以這份為準。
+What this file is: the project spec and working rules for media-downloader.
+Claude Code reads it at the start of every session.
+Update it when the spec or a decision changes; when you hit a pitfall, write "don't do this again" as a rule.
+Published on GitHub: yes, but never put tokens, personal paths or account data in it.
+When the code and this file disagree, change one of them; this file is the reference.
 -->
 
-# CLAUDE.md：media-downloader
+# CLAUDE.md: media-downloader
 
-以抓音樂為主、影片為輔的 Windows 桌面下載器，用下載佇列一次處理多首歌和整個播放列表。
+A Windows desktop downloader, mainly for music and also for video, that uses a download queue to handle many songs and whole playlists at once.
 
-這份放決定與規則。細節在 `docs/功能規格.md`、`docs/架構.md`，決定的背景在 `docs/decisions/`。
-`docs/` 與這份衝突時以這份為準，並把 `docs/` 改成一致。文件沒寫到的功能先問，不要自行擴充。
+This file holds the decisions and rules. Details are in `docs/功能規格.md` (spec), `docs/架構.md` (architecture), and the background of each decision in `docs/decisions/`.
+Everything under `docs/` and `design-system/` is written in Traditional Chinese.
+When `docs/` disagrees with this file, this file wins; bring `docs/` in line. Ask before adding a feature the documents don't describe.
 
-## 1. 目標
+## 1. Goals
 
-- 取代舊專案 youtube-downloader（Python + CustomTkinter），解決它難維護與實際使用時的 bug。
-- 主要用途是抓音樂（MP3），偶爾抓影片（MP4）；可以一次排很多個網址，也可以整個播放列表下載。
-- 使用者是作者本人，以及從 GitHub 下載安裝檔的其他人。他們不一定有裝 Python。
-- 先支援 YouTube；架構預留其他平台（TikTok、Instagram、X、Telegram 等）。
-- 同時作為 UI 設計流程的練習專案。
+- Replace the earlier project youtube-downloader (Python + CustomTkinter), which was hard to maintain and had bugs in daily use.
+- Mostly for music (MP3), sometimes video (MP4); many URLs can be queued at once, and whole playlists downloaded.
+- Users are the author and people who download the installer from GitHub. They may not have Python.
+- YouTube first; the architecture leaves room for other platforms (TikTok, Instagram, X, Telegram, …).
+- Also a practice project for a UI design workflow.
 
-### 不做的事
+### Not doing
 
-- 格式轉換器。
-- 圖片教學的說明視窗、選單列（文件／關於／檢查更新併入設定頁）。
-- 第一版不測試、不保證 YouTube 以外的平台。
-- 第一版不做：MP3 自動填標籤、原始音訊格式（m4a／opus）、深色模式、歷史搜尋、Windows 通知、字幕、時間區段裁剪、瀏覽器 cookies 登入。
-- App 不做背景靜默更新；有新版只在介面內提示。
-- 不用「下載 zip + 跑 bat」的方式發佈。
+- A format converter.
+- A help window with picture tutorials, or a menu bar (docs / about / check for updates live on the settings screen).
+- Testing or supporting platforms other than YouTube in the first version.
+- Not in the first version: automatic MP3 tagging, original audio formats (m4a / opus), dark mode, searching the history, Windows notifications, subtitles, trimming to a time range, signing in with browser cookies.
+- No silent background updates of the app; a new version is only announced inside the app.
+- No "download a zip and run a .bat" release.
 
-## 2. 決定
+## 2. Decisions
 
-| 項目 | 決定 | 理由 |
+| Item | Decision | Reason |
 | --- | --- | --- |
-| 名稱 | repo `media-downloader`，App 顯示名稱 Media Downloader | 看得出用途，不綁單一平台 |
-| 語言／框架 | 後端 Python 3.12+；介面 React + TypeScript + Vite + Tailwind | 下載邏輯留在 Python；介面用網頁技術才能套用 UI 設計流程。見 `docs/decisions/0001` |
-| 桌面外殼 | pywebview（Windows 上用 WebView2） | 單一程序、兩種語言，比 Tauri 好維護。見 `0002` |
-| 下載引擎 | 呼叫 yt-dlp 官方執行檔，搭配 Deno 與 FFmpeg；不 `import yt_dlp` | yt-dlp 可獨立更新、取消就是結束程序。見 `0003` |
-| 外部程式位置 | 安裝檔採「僅目前使用者」安裝到 `%LOCALAPPDATA%\Programs`；外部程式放共用資料夾 `%LOCALAPPDATA%\media-downloader\bin`（開發時是 repo 的 `bin\`） | App 更新（重跑安裝程式）不會把使用者更新過的 yt-dlp 換回舊版。見 `0018`（取代 `0005`） |
-| 介面狀態 | Zustand | 輕量，佇列狀態集中管理 |
-| 介面語言 | 繁體中文、英文，react-i18next，預設跟隨系統 | 給別人用 |
-| 視覺方向 | 「唱片封套」：梅紫主色，MP3 縮圖正方形、MP4 維持 16:9；規範在 `design-system/media-downloader/` | 特色來自「抓音樂」這個用途。見 `0006` |
-| 字體與圖示 | Noto Sans TC、Bricolage Grotesque 隨 App 附帶（npm 套件），圖示用 Phosphor；不從網路載入 | 每台電腦看起來一樣，離線可用。見 `0006` |
-| 視窗 | 預設 960x680，最小 720x520，左側導覽 | 清單型畫面高度比寬度珍貴。見 `0006` |
-| 儲存 | 設定用 JSON、歷史紀錄用 SQLite（縮圖也存在裡面），放 `%APPDATA%`；記錄檔與新版檢查的結果放 `%LOCALAPPDATA%` | SQLite 是 Python 內建，之後好做搜尋。見 `0011` |
-| App 新版檢查 | 問 GitHub 的最新發佈，結果存 24 小時（查不到存 1 小時）；版本號是 `backend/app/__init__.py` 的 `__version__`，照語意化版本比較（`1.0.0-rc.1 < 1.0.0`） | 不會每次啟動都連網路；打包後沒有 `pyproject.toml`。見 `0011`、`0019` |
-| App 更新 | 設定頁「立即更新」：下載發佈裡的安裝檔、核對 `.sha256`、`/SILENT` 執行、App 關閉，裝完自動重開；yt-dlp 在打包後的 App 啟動時自動更新（一天一次） | 使用者不用自己下載安裝檔；yt-dlp 過時是最常壞的原因。見 `0019` |
-| 下載程序的管理 | 每個外部程式放進自己的 Windows Job Object；取消是結束整個 Job | App 被強制結束時下載也會一起結束。見 `0008` |
-| 檔名與重複檔 | 檔名只用標題；下載在任務的暫存資料夾完成，由引擎搬進下載資料夾時套用略過／覆蓋／自動改名 | 下載資料夾不會出現半成品，也不動使用者原本的檔案。見 `0009` |
-| MP3 封面 | 置中裁成正方形的 JPEG | 配合「唱片封套」的正方形縮圖 |
-| 測試 | 後端 pytest、介面 Vitest | |
-| 打包／發佈 | PyInstaller（資料夾模式）+ 安裝檔；推 tag 時由 GitHub Actions 打包上傳 Releases | 使用者不需安裝 Python |
-| 實作順序 | 骨架 → 技術驗證 → UI 設計 → 後端 → 介面 → 打包 | UI 設計時要有真實資料當依據。見 `0004` |
-| 授權 | MIT；附帶的 yt-dlp、FFmpeg、Deno 與兩個字體（OFL 1.1）維持各自的授權，README 與關於頁要列出 | 個人工具，最簡單寬鬆 |
-| 公開 | 開發期間不公開，完成後公開；公開前文件改成英文 | |
+| Name | repo `media-downloader`, app name Media Downloader | Says what it does, not tied to one platform |
+| Language / framework | Backend Python 3.12+; UI React + TypeScript + Vite + Tailwind | Download logic stays in Python; a web UI makes the UI design workflow usable. See `docs/decisions/0001` |
+| Desktop shell | pywebview (WebView2 on Windows) | One process, two languages; easier to maintain than Tauri. See `0002` |
+| Download engine | Run the official yt-dlp executable with Deno and FFmpeg; never `import yt_dlp` | yt-dlp can be updated on its own, and cancelling is ending a process. See `0003` |
+| Where external programs live | The installer installs "for the current user only" into `%LOCALAPPDATA%\Programs`; external programs go in the shared folder `%LOCALAPPDATA%\media-downloader\bin` (the repo's `bin\` during development) | Updating the app (running the installer again) never puts back an older yt-dlp the user already updated. See `0018` (replaces `0005`) |
+| UI state | Zustand | Light; the queue state lives in one place |
+| UI languages | Traditional Chinese and English, react-i18next, follows the system by default | Other people use it |
+| Visual direction | "Record sleeve": plum as the main color, square MP3 thumbnails, MP4 stays 16:9; the rules are in `design-system/media-downloader/` | Its character comes from its purpose, getting music. See `0006` |
+| Fonts and icons | Noto Sans TC and Bricolage Grotesque ship with the app (npm packages), icons are Phosphor; nothing is loaded from the internet | Looks the same on every computer and works offline. See `0006` |
+| Window | 960x680 by default, 720x520 minimum, navigation on the left | List screens need height more than width. See `0006` |
+| Storage | Settings as JSON and history in SQLite (thumbnails included), in `%APPDATA%`; the log and the new-version check result in `%LOCALAPPDATA%` | SQLite ships with Python, and the history can be searched later. See `0011` |
+| New-version check | Ask GitHub for the latest release and keep the answer 24 hours (1 hour when there was no answer); the version is `__version__` in `backend/app/__init__.py`, compared as semantic versions (`1.0.0-rc.1 < 1.0.0`) | No network call on every start; a packaged app has no `pyproject.toml`. See `0011`, `0019` |
+| App update | "Update now" on the settings screen: download the installer from the release, check it against `.sha256`, run it with `/SILENT`, the app closes and reopens after the install; a packaged app updates yt-dlp when it starts (once a day) | Users don't have to download installers themselves; an outdated yt-dlp is the most common cause of breakage. See `0019` |
+| Download processes | Every external program runs in its own Windows Job Object; cancelling ends the whole Job | When the app is killed, its downloads end too. See `0008` |
+| File names and duplicates | The file name is the title only; a download finishes in the task's temporary folder and the engine applies skip / overwrite / rename when it moves the file into the download folder | No half-finished files in the download folder, and the user's existing files are left alone. See `0009` |
+| MP3 cover | A JPEG cropped to a centered square | Matches the square "record sleeve" thumbnails |
+| Tests | pytest for the backend, Vitest for the UI | |
+| Packaging / release | PyInstaller (folder mode) + an installer; pushing a tag makes GitHub Actions build and upload to Releases | Users don't need Python |
+| Implementation order | Skeleton → technical spike → UI design → backend → UI → packaging | UI design needs real data to work from. See `0004` |
+| License | MIT; the bundled yt-dlp, FFmpeg, Deno, the two fonts (OFL 1.1) and the Python and npm packages keep their own licenses, which the README and the about screen point to | A personal tool; the simplest permissive license. See `0021` |
+| Public | Private during development, public when done. English: README.md, CHANGELOG.md, CLAUDE.md; README.zh-TW.md, `docs/` and the design system stay in Chinese | See `0021` |
 
-套件版本在動手時查當下的穩定版，不憑記憶寫。
+Look up the current stable version of a package when you add it; don't write versions from memory.
 
-## 3. 規格
+## 3. Spec
 
-完整內容與舊版 bug 對照表見 `docs/功能規格.md`。第一版範圍：
+The full spec and the table of the old version's bugs are in `docs/功能規格.md`. First version:
 
-- 下載佇列：連續貼多個網址，每個項目獨立進度、可取消、可重試；可一次取消全部（先確認）；可設定同時下載數。
-- 播放列表：貼網址後展開成佇列項目，可勾選要下載哪些。
-- 格式 MP3、MP4；畫質／音質依該影片實際可用的選項列出，顯示預估檔案大小。
-- 影片資訊預覽（縮圖、標題、時長、頻道）；音樂檔可嵌入封面。
-- 記住上次的格式、畫質、路徑。
-- 歷史紀錄：重新下載、開啟所在資料夾、刪除單筆、清空。
-- 設定頁：下載路徑、預設格式與畫質、同時下載數、重複檔處理、介面語言、檢查更新、關於。
-- 重複檔處理：略過／覆蓋／自動改名。
-- 錯誤訊息分類說明原因與下一步（私人影片、年齡限制、會員限定、地區限制、網路中斷）。
-- yt-dlp 可獨立更新；App 有新版時在介面內提示，不用彈窗。
-- 進度是一條總進度，並顯示目前階段：下載階段顯示實際百分比；查資訊、轉檔、合併、嵌入封面沒有百分比，只顯示階段名稱與不確定進度，不顯示假的數字。
-- 安裝檔內含所有外部程式；執行時不出現主控台視窗。
+- Download queue: paste many URLs in a row; each item has its own progress and can be cancelled or retried; cancel everything at once (after a confirmation); the number of simultaneous downloads is a setting.
+- Playlists: a pasted URL expands into queue items, and you tick which ones to download.
+- MP3 and MP4; the audio / video qualities offered are the ones that video actually has, with an estimated file size.
+- Video preview (thumbnail, title, length, channel); music files can embed the cover.
+- Remember the last format, quality and folder.
+- History: download again, open the containing folder, delete one entry, clear.
+- Settings: download folder, default format and quality, simultaneous downloads, what to do with duplicate files, UI language, check for updates, about.
+- Duplicate files: skip / overwrite / rename automatically.
+- Error messages are grouped by cause and say what to do next (private video, age restriction, members only, region restriction, network lost).
+- yt-dlp can be updated on its own; a new app version is announced inside the UI, not in a pop-up.
+- Progress is one overall bar with the current stage: the download stage shows a real percentage; looking up info, converting, merging and embedding the cover have no percentage and show the stage name with an indeterminate bar, never a fake number.
+- The installer includes every external program; no console window ever appears.
 
-畫面：主畫面（貼網址 + 佇列）、空狀態、播放列表勾選、歷史紀錄、設定。
+Screens: main (paste a URL + queue), empty state, playlist selection, history, settings.
 
-完成的定義：`docs/功能規格.md` 第 2 節的舊版問題（U1–U4、C1–C11）逐項驗過。
+Done means: every old-version problem in section 2 of `docs/功能規格.md` (U1–U4, C1–C11) checked one by one.
 
-## 4. 架構
+## 4. Architecture
 
-細節見 `docs/架構.md`。介面與後端來往的指令、事件、資料形狀以 `docs/介面與後端的約定.md` 為準。
+Details in `docs/架構.md`. Commands, events and data shapes between the UI and the backend follow `docs/介面與後端的約定.md` (the contract).
 
 ```
-介面 frontend/  →  橋接 bridge/  →  服務 services/  →  領域 domain/  ←  基礎設施 infrastructure/
+UI frontend/  →  bridge bridge/  →  services services/  →  domain domain/  ←  infrastructure infrastructure/
 ```
 
 ```
 backend/app/
-  bridge/            介面與後端之間的轉接，不含業務邏輯
-  services/          佇列、影片資訊、歷史、設定、更新
-  domain/            資料模型與規則：DownloadTask（狀態機）、MediaInfo、ErrorCode、MediaEngine 介面
+  bridge/            between the UI and the backend; no business logic
+  services/          queue, video info, history, settings, updates
+  domain/            models and rules: DownloadTask (state machine), MediaInfo, ErrorCode, the MediaEngine interface
   infrastructure/
-    engines/ytdlp/   YtDlpEngine，實作 MediaEngine
-    storage/         設定檔、歷史紀錄資料庫、資料夾位置
-    binaries/        外部程式的路徑與版本
-    logging/         記錄檔（含遮蔽個人路徑）
-    process.py       啟動外部程式的唯一入口（Job Object）
-    http.py          App 自己連網路的唯一入口
-    thumbnails.py releases.py shell.py   歷史縮圖、最新發佈、用 Windows 開啟東西
-    app_installer.py   下載、核對、啟動 App 新版的安裝檔
-  composition.py     把全部服務組起來（真的引擎、檔案、Windows）
+    engines/ytdlp/   YtDlpEngine, implements MediaEngine
+    storage/         settings file, history database, folder locations
+    binaries/        paths and versions of the external programs
+    logging/         log file (with personal paths masked)
+    process.py       the only way to start an external program (Job Object)
+    http.py          the only way the app itself reaches the network
+    thumbnails.py releases.py shell.py   history thumbnails, latest release, opening things with Windows
+    app_installer.py   download, check and start the installer of a new app version
+  composition.py     wires all the services together (real engine, files, Windows)
 backend/tests/
 frontend/src/
-  api/               唯一呼叫橋接層的地方
+  api/               the only place that calls the bridge
   pages/ components/ stores/ i18n/
-design-system/       UI 設計規範（MASTER.md 與 pages/）
-brand/               App 圖示（logo/、icons/、concepts/、guidelines.md）
-docs/                功能規格、架構、決策紀錄、技術驗證
-packaging/           PyInstaller 設定、安裝檔腳本
-scripts/             一鍵檢查、下載外部程式、開發用指令
+design-system/       UI design rules (MASTER.md and pages/)
+brand/               app icon (logo/, icons/, concepts/, guidelines.md)
+docs/                spec, architecture, decision records, technical spike
+packaging/           PyInstaller spec, installer script, licenses
+scripts/             one-step check, fetching external programs, developer commands
 ```
 
-### 依賴方向（不可違反）
+### Dependency direction (never break)
 
-1. 上層可以呼叫下層，下層不可 import 上層。
-2. 下層要通知上層時只發事件，不直接呼叫。
-3. `domain/` 不碰檔案、網路、子程序。
-4. 只有 `infrastructure/engines/ytdlp/` 可以出現 yt-dlp 的參數、輸出格式、錯誤字串。
-5. `bridge/` 不放業務邏輯。
-6. 介面只有 `frontend/src/api/` 可以呼叫橋接層，其他元件一律透過它。
-7. 外部程式的路徑只能從 `infrastructure/binaries/` 取得。
-8. 下載任務的狀態只能由 `DownloadTask` 的狀態機改變。
-9. 後端回傳錯誤代碼（`ErrorCode`），不回傳給人看的文字；文字放在介面的語言檔。
-10. 引擎不直接碰 `DownloadTask`：它回報事件，由服務層套用到任務上。
-11. 成品路徑不交給介面；介面用任務編號或歷史紀錄編號叫後端開啟資料夾。
-12. `services/` 不 import `infrastructure/`：需要的東西在 `services/ports.py` 定義成介面，由 `composition.py` 接上真的實作。
-13. App 自己連網路只能經由 `infrastructure/http.py`（https、主機允許清單、轉址最多 5 次且每次重新檢查、大小上限）。憑證由 truststore 交給 Windows 驗證，不要改回 Python 預設的 SSL 設定：乾淨的 Windows 缺根憑證時會失敗（`0020`）。
+1. An upper layer may call a lower one; a lower layer never imports an upper one.
+2. A lower layer tells an upper one about something only by emitting an event, never by calling it.
+3. `domain/` never touches files, the network or subprocesses.
+4. Only `infrastructure/engines/ytdlp/` may contain yt-dlp options, output formats or error strings.
+5. `bridge/` holds no business logic.
+6. In the UI only `frontend/src/api/` may call the bridge; every other component goes through it.
+7. Paths of external programs come only from `infrastructure/binaries/`.
+8. Only `DownloadTask`'s state machine changes a task's status.
+9. The backend returns error codes (`ErrorCode`), never text for people; the text lives in the UI's language files.
+10. The engine never touches `DownloadTask` directly: it reports events and the service layer applies them to the task.
+11. Finished file paths are never handed to the UI; the UI asks the backend to open a folder by task id or history id.
+12. `services/` never imports `infrastructure/`: what it needs is defined as an interface in `services/ports.py`, and `composition.py` plugs in the real implementation.
+13. The app reaches the network only through `infrastructure/http.py` (https, a host allow-list, at most 5 redirects each checked again, a size limit). Certificates are verified by Windows through truststore; don't go back to Python's default SSL setup: it fails on a clean Windows that lacks a root certificate (`0020`).
 
-介面與後端各有一份的常數（格式、音質、畫質、九種狀態、13 個錯誤代碼、可以重試的錯誤）在 `backend/app/domain/` 與 `frontend/src/types.ts`，要一起改。
-狀態轉換表有三處要一致：`domain/task.py` 的 `TRANSITIONS`、約定第 6 節、`架構.md` 的狀態圖。
+Constants that exist on both sides (formats, audio qualities, video qualities, the nine statuses, the 13 error codes, which errors can be retried) live in `backend/app/domain/` and `frontend/src/types.ts`; change both together.
+The status transition table must match in three places: `TRANSITIONS` in `domain/task.py`, section 6 of the contract, and the state diagram in `架構.md`.
 
-新增檔案前先說明它屬於哪一層。需求看起來要打破上述規則時，停下來問。
+Before adding a file, say which layer it belongs to. If a requirement seems to need breaking these rules, stop and ask.
 
-### 多平台
+### Multiple platforms
 
-下載引擎實作 `MediaEngine` 介面。第一版只有 `YtDlpEngine`。`MediaInfo` 帶 `platform` 欄位。
-程式內部不拿「youtube」當通用名稱（類別、資料表、設定鍵）；YouTube 只是其中一個平台。
+Download engines implement the `MediaEngine` interface. The first version only has `YtDlpEngine`. `MediaInfo` carries a `platform` field.
+Internal names (classes, tables, setting keys) never use "youtube" as a general name; YouTube is just one platform.
 
-## 5. 規則
+## 5. Rules
 
-### 安全
+### Security
 
-- token、cookies、帳號資料、個人路徑不進 git，也不寫進記錄檔。
-- 外部執行檔（yt-dlp、FFmpeg、Deno）不進 git，由 `scripts/` 下載；下載後核對來源提供的雜湊值。
-- 呼叫外部程式一律用參數清單，不用字串拼接的 shell 指令；使用者輸入的網址與路徑只能當成單一參數傳入。
-- 檔名取自影片標題時要清掉 Windows 不允許的字元，並確認結果仍在使用者選的下載資料夾內。
+- Tokens, cookies, account data and personal paths never go into git or into the log.
+- External executables (yt-dlp, FFmpeg, Deno) never go into git; `scripts/` downloads them and checks the hash their source publishes.
+- External programs are always called with an argument list, never a shell command built from strings; URLs and paths from the user are passed only as single arguments.
+- A file name taken from a video title has the characters Windows forbids removed, and the result must still be inside the download folder the user chose.
 
-### 測試
+### Tests
 
-- 每個 bug 先寫會失敗的測試重現，這個測試永久保留。
-- 完成前一定要跑過一鍵檢查腳本 `scripts/check.py`。
-- 依賴方向由 `backend/tests/test_layering.py` 檢查；它擋下來時改程式，不要改測試裡的清單（除非規則本身改了）。
-- `domain/` 與 `services/` 的邏輯要有 pytest 測試；測試不連網路，yt-dlp 的輸出用錄下來的樣本。
+- Every bug first gets a failing test that reproduces it; that test stays forever.
+- Run the one-step check `scripts/check.py` before calling anything done.
+- `backend/tests/test_layering.py` checks the dependency direction; when it fails, change the code, not the lists in the test (unless the rule itself changed).
+- Logic in `domain/` and `services/` has pytest tests; tests never use the network, and yt-dlp output comes from recorded samples.
 
-- 牽涉執行緒的測試不用 `sleep`、不假設哪條執行緒先跑：用 `tests/fake_engine.py`（每一步由測試推進）和傳入的假時鐘。新的佇列測試寫完要重複跑幾十次確認不會偶爾失敗。
-- `tests/` 和 `scripts/manual/` 的檔名不要跟標準函式庫的模組同名（例如 `queue.py`）：那個資料夾會排在匯入路徑最前面，連標準函式庫自己的 `import queue` 都會匯入到它。
+- Tests involving threads never `sleep` or assume which thread runs first: use `tests/fake_engine.py` (each step is driven by the test) and an injected fake clock. Run a new queue test dozens of times to be sure it never fails now and then.
+- File names in `tests/` and `scripts/manual/` must not match a standard library module (e.g. `queue.py`): that folder comes first on the import path, so even the standard library's own `import queue` would import it.
 
-### 佇列（依據見 `docs/decisions/0010`）
+### Queue (reasons in `docs/decisions/0010`)
 
-- 任務只能在拿著 `QueueService` 的鎖時改；事件也在鎖裡排進佇列。不在鎖裡呼叫可能會慢或會回頭呼叫佇列的東西（介面的監聽函式、歷史紀錄）。
-- 引擎的 `on_event` 處理不可以丟例外，也不可以做慢的事：丟例外會中止下載。
-- 同一個任務編號的兩次下載不可以重疊（共用一個暫存資料夾）：空位以還活著的下載執行緒計算，重新加入的任務要等舊的一輪結束。
-- 進度節流是「太早到就丟掉」，不要改成留著等一下再送：那樣狀態改變後會補送舊的百分比。
-- 背景執行緒一律是 daemon；不用 `ThreadPoolExecutor`，它會讓 App 結束時等正在查詢的程序。
-- 設定的實作（`QueueSettings`）被佇列在鎖裡讀取，裡面不可以回頭呼叫佇列或拿會等佇列的鎖。
+- A task is changed only while holding `QueueService`'s lock; events are also queued inside the lock. Nothing that may be slow or call back into the queue (UI listeners, history) is called inside the lock.
+- The engine's `on_event` handler must not raise or do anything slow: an exception aborts the download.
+- Two downloads with the same task id must never overlap (they share a temporary folder): free slots are counted by download threads still alive, and a re-added task waits for the previous round to end.
+- Progress throttling drops what arrives too early; don't change it to hold and send later: that sends an old percentage after the status changed.
+- Background threads are always daemon threads; no `ThreadPoolExecutor`, which makes the app wait at exit for processes still looking things up.
+- The settings implementation (`QueueSettings`) is read by the queue inside its lock; it must not call back into the queue or take a lock that waits on the queue.
 
-### 設定、歷史、記錄檔（依據見 `docs/decisions/0011`）
+### Settings, history, log (reasons in `docs/decisions/0011`)
 
-- 設定的讀取不拿鎖（整個物件一次換掉）；鎖的順序只有「設定的寫入鎖 → 佇列的鎖」。設定的監聽函式在寫入鎖裡被呼叫，裡面不可以改設定。
-- 抓回來的圖片交給 FFmpeg 前要先看檔頭，並用 `-f` 指定格式：讓 FFmpeg 自己猜，播放清單一類的格式可以叫它去讀別的檔案。
-- 歷史資料庫只有在確定損毀（不是資料庫、內容損毀）時才改名重來；磁碟滿、被鎖住不算。
-- 開啟檔案、資料夾、網頁不組指令列（不用 `explorer /select,`）：用 `infrastructure/shell.py`。
-- 記錄檔不記標題與檔案路徑；新的記錄如果可能帶路徑，靠 `logging/setup.py` 的遮蔽，不要自己另外處理。
-### 橋接層（依據見 `docs/decisions/0012`）
+- Reading settings takes no lock (the whole object is replaced at once); the only lock order is "settings write lock → queue lock". Settings listeners are called inside the write lock and must not change settings.
+- Before a downloaded image goes to FFmpeg, check its header and name the format with `-f`: left to guess, FFmpeg can be made to read other files by a format such as a playlist.
+- The history database is renamed and started fresh only when it is certainly damaged (not a database, corrupt content); a full disk or a lock doesn't count.
+- Files, folders and web pages are opened without building a command line (no `explorer /select,`): use `infrastructure/shell.py`.
+- The log never records titles or file paths; a new log line that may contain a path relies on the masking in `logging/setup.py`, not on its own handling.
+### Bridge (reasons in `docs/decisions/0012`)
 
-- pywebview 會把 `BridgeApi` 上所有不是底線開頭的屬性公開給網頁（連屬性的屬性）：不是指令的成員一律底線開頭。`test_bridge_api.py` 會比對公開的名字就是約定的指令。
-- 每個指令都經過 `_run` 包起來，不讓例外漏到網頁。
-- `emit` 只排隊，不呼叫服務、不等網頁。送事件的只有 `EventSender` 那一條執行緒。
-- `closing` 的處理函式在介面執行緒上同步執行：裡面不可以呼叫 `evaluate_js` 或任何要等網頁的東西（會死結）。
-- 橋接層不 import pywebview：需要視窗的事由 `main.py` 包成函式傳進去。
-- 改了資料形狀、事件或指令名稱，`types.ts`、`api/index.ts` 要一起改；`test_types_ts.py` 會擋。
+- pywebview exposes every attribute of `BridgeApi` that doesn't start with an underscore to the page (and their attributes too): every member that isn't a command starts with an underscore. `test_bridge_api.py` checks that the exposed names are exactly the contract's commands.
+- Every command is wrapped by `_run`, so no exception leaks into the page.
+- `emit` only queues; it never calls services or waits for the page. Only the `EventSender` thread sends events.
+- The `closing` handler runs synchronously on the UI thread: it must not call `evaluate_js` or anything that waits for the page (deadlock).
+- The bridge doesn't import pywebview: what needs the window is wrapped as functions by `main.py` and passed in.
+- When a data shape, event or command name changes, change `types.ts` and `api/index.ts` too; `test_types_ts.py` catches it.
 
-- 測試與 `scripts/manual/` 不用預設的資料夾：`build()` 要傳入暫存的資料夾。`Backend.start()` 會清下載資料夾裡的暫存，測試裡不要對真的「下載」資料夾呼叫。
+- Tests and `scripts/manual/` never use the default folders: pass temporary folders to `build()`. `Backend.start()` clears temporary files in the download folder; never call it on the real Downloads folder in a test.
 
-### 工作流程
+### Workflow
 
-- 一次只做一個功能或修正；開工前先說會改哪些檔案。
-- 使用者看得到的改動寫進 `CHANGELOG.md` 的 `[Unreleased]`。
-- 重大決定寫進 `docs/decisions/NNNN-標題.md`。
-- 照第 2 節的實作順序一個階段一個階段做，不跨階段；每個階段結束時說明怎麼驗收。
+- One feature or fix at a time; say which files will change before starting.
+- Changes users can see go into `[Unreleased]` in `CHANGELOG.md`.
+- Major decisions go into `docs/decisions/NNNN-title.md`.
+- Follow the order in section 2 one stage at a time, never across stages; at the end of each stage, say how to accept it.
 
-### 介面文字
+### UI text
 
-- 顯示給使用者的文字都放在 `frontend/src/i18n/` 的 `zh-TW.json` 與 `en.json`，兩份同步新增。
-- 元件裡不寫死中文或英文字串。
-- `README.md` 和 `README.zh-TW.md` 要一起改。
+- Every text shown to users lives in `zh-TW.json` and `en.json` under `frontend/src/i18n/`; add to both together.
+- No hard-coded Chinese or English strings in components.
+- Change `README.md` and `README.zh-TW.md` together; they match section by section (`0021`).
 
-### 外部程式
+### External programs
 
-- 呼叫任何外部程式都要隱藏主控台視窗，並以 UTF-8 處理輸出。
-- yt-dlp 的參數查官方文件確認，不憑記憶寫。
-- 呼叫 yt-dlp 的坑（依據見 `docs/技術驗證.md`）：
-  - 一律帶 `--ignore-config`、`--encoding utf-8`、`--color never`、`--ffmpeg-location`；不加 `--encoding utf-8` 輸出會是系統的 cp950。
-  - Deno 用 `--js-runtimes deno:<絕對路徑>` 指定；相對路徑會找不到。
-  - `--print` 會進入安靜模式，下載進度和「重試」那一行都會不見；要加 `--no-quiet` 與 `--progress`。
-  - 下載進度印在 stdout、後處理（轉檔、合併）的進度印在 stderr：下載時兩條併成一條照順序讀。
-  - 取消要結束整棵程序樹：`yt-dlp.exe` 是兩層程序，只結束外層，內層和 FFmpeg 會繼續跑。外部程式一律經由 `infrastructure/process.py` 放進 Job Object 啟動，不直接用 `subprocess`，也不用 `taskkill`（見 `0008`）。
-  - 每個任務用自己的暫存資料夾（`<下載資料夾>\.md-tmp-<任務編號>`），整個下載在裡面完成，成品由引擎搬出來並套用重複檔規則；取消、失敗、成功後整個刪掉（見 `0009`）。
-  - 失敗的結束代碼一律是 1，錯誤分類靠 `ERROR:` 之後的文字；`ERROR:` 那一行可能是空的，內容在下一行，所以要看整段。比對規則只放在 `errors.py`。比對不到的歸為未知錯誤，原文寫進記錄檔。
-  - 重試那一行括號裡的次數會重新從 1 算，第幾次重試由引擎自己數。
-  - MP3 的封面轉檔發生在下載之前；「開始轉檔」只認下載開始之後的後處理。
-  - 下載遇到 HTTP 403（同時 3 個以上約每 15 次 1 次）引擎自己再試一次：只在還沒有任何進度時、最多一次，第二次照原本的分類回報。這段只在引擎裡，服務層不知道；判斷的字串放 `errors.py`。兩次嘗試之間任務仍算在執行中，取消才不會漏掉。
-  - 即將直播的影片是直接失敗（`This live event will begin in …`），不是回 `live_status=is_upcoming`；兩條路都要歸成 `liveNotSupported`。
-  - `--ppa` 的值會被 yt-dlp 像 shell 一樣拆開：FFmpeg 濾鏡裡有逗號時，外面要雙引號、裡面要單引號。
-  - 傳給 yt-dlp 的網址要先過 `urls.check`（http/https、YouTube 的網域清單），並放在 `--` 之後。
-  - 畫質用 `-S res:N,vcodec:h264,acodec:m4a` 加 `--merge-output-format mp4`，不用 `height<=N`（直式影片會選錯）。4K 沒有 H.264，會是 VP9 裝在 mp4 裡，不重新編碼。
-- 不隨 App 附 ffprobe：MP3 加封面、MP4 合併都不需要它。之後的功能需要時再加回來。
+- Every external program runs with its console window hidden, and its output is read as UTF-8.
+- Check yt-dlp options in the official documentation; don't write them from memory.
+- Pitfalls of calling yt-dlp (reasons in `docs/技術驗證.md`):
+  - Always pass `--ignore-config`, `--encoding utf-8`, `--color never`, `--ffmpeg-location`; without `--encoding utf-8` the output is the system's cp950.
+  - Name Deno with `--js-runtimes deno:<absolute path>`; a relative path isn't found.
+  - `--print` switches to quiet mode, which hides the download progress and the "retrying" line; add `--no-quiet` and `--progress`.
+  - Download progress goes to stdout and post-processing (conversion, merging) progress to stderr: while downloading, read the two merged into one stream, in order.
+  - Cancelling must end the whole process tree: `yt-dlp.exe` is two processes, and ending only the outer one leaves the inner one and FFmpeg running. External programs always start through `infrastructure/process.py`, inside a Job Object, never with `subprocess` directly and never with `taskkill` (see `0008`).
+  - Each task uses its own temporary folder (`<download folder>\.md-tmp-<task id>`); the whole download happens inside it, and the engine moves the result out applying the duplicate rule; the folder is deleted after a cancel, a failure or a success (see `0009`).
+  - The exit code of every failure is 1; errors are classified by the text after `ERROR:`. That line may be empty with the text on the next one, so read the whole block. Matching rules live only in `errors.py`. Anything unmatched is an unknown error, with the original text in the log.
+  - The count in the brackets of the retry line starts again from 1; the engine counts the retries itself.
+  - MP3 cover conversion happens before the download; "conversion started" only counts post-processing after the download started.
+  - On HTTP 403 during a download (about 1 in 15 with 3 or more at once) the engine tries once more by itself: only before any progress, at most once, and the second failure is reported as usual. This lives only in the engine; the service layer doesn't know. The strings it checks are in `errors.py`. Between the two attempts the task is still running, so a cancel isn't missed.
+  - An upcoming live stream fails outright (`This live event will begin in …`) instead of returning `live_status=is_upcoming`; both paths must map to `liveNotSupported`.
+  - yt-dlp splits the value of `--ppa` like a shell: when an FFmpeg filter contains commas, use double quotes outside and single quotes inside.
+  - A URL given to yt-dlp first passes `urls.check` (http/https, the YouTube domain list) and comes after `--`.
+  - Quality uses `-S res:N,vcodec:h264,acodec:m4a` with `--merge-output-format mp4`, not `height<=N` (which picks wrong for vertical videos). 4K has no H.264, so it is VP9 inside mp4, without re-encoding.
+- ffprobe doesn't ship with the app: adding an MP3 cover and merging an MP4 don't need it. Add it back when a later feature needs it.
 
-### 打包與安裝檔（依據見 `docs/decisions/0018`）
+### Packaging and installer (reasons in `docs/decisions/0018`)
 
-- 一鍵打包：`python scripts/build_installer.py`，從刪掉 `build/` 開始，產出在 `packaging/output/`（不進 git）。它會跑 `npm ci`，開發伺服器要先關掉。
-- 版本號只改 `backend/app/__init__.py` 的 `__version__` 和 `pyproject.toml`（`test_version.py` 擋不一致）；`uv run` 會跟著改 `backend/uv.lock` 的版本，一起 commit 或一起還原。安裝檔的版本由打包腳本傳入，不寫死在 `installer.iss`。
-- `installer.iss` 裡 yt-dlp 那一行**不可以**加 `ignoreversion`：靠 Inno 比較版本，才不會把使用者更新過的換回舊版。FFmpeg、Deno 要加。
-- 打包後的資料檔在 `sys._MEIPASS`（`_internal\`）底下，不在 `__file__` 往上找得到的地方（`main.py` 的 `DIST_INDEX`）。
-- 換 FFmpeg 版本時，`fetch_binaries.py` 與 `packaging/licenses/FFmpeg-SOURCE.txt` 一起改（原始碼連結要指到實際附帶的那一版）。
-- `installer.iss` 有中文，存成 UTF-8 加 BOM。
-- `main.py` 建立的 mutex 名稱與 `installer.iss` 的 `AppMutexName` 要一致。
-- 發佈由 `.github/workflows/release.yml` 打包（依據見 `0020`）：推 `v*` tag 建 draft Release，手動觸發只放 artifact。上傳的只有安裝檔與同名 `.sha256`；workflow 絕不加 `--test-update-source`（`test_update_source.py` 擋）。
-- `build_installer.py` 不加 `--test-update-source` 時會檢查 `packaging/output/` 只有那兩個檔案、Inno 的檔案清單（`OutputManifestFile`）裡沒有標記檔；`--release-tag` 要等於 `v<__version__>`。不要拿掉這些檢查。
-- uv.lock 的版本是 PEP 440 的寫法（`1.0.0rc1`），`test_version.py` 正規化後比對；三處一起改。
-- workflow 的 Actions 固定到 commit SHA；Inno Setup（7.1.1）與 gitleaks（8.30.1）寫死版本與 SHA-256。升級時一起換掉雜湊。
-- exe 的版本資訊由 spec 從 `__version__` 產生，數字版本只放前三段（rc 與正式版都是 `x.y.z.0`）。不放 email 或個人資料。
+- One-step build: `python scripts/build_installer.py`, starting by deleting `build/`; the output goes to `packaging/output/` (not in git). It runs `npm ci`, so stop the dev server first.
+- Change the version only in `__version__` in `backend/app/__init__.py` and in `pyproject.toml` (`test_version.py` catches a mismatch); `uv run` also changes the version in `backend/uv.lock`, so commit or revert it together. The installer's version is passed in by the build script, never written into `installer.iss`.
+- The yt-dlp line in `installer.iss` must **not** get `ignoreversion`: Inno's version comparison is what keeps it from replacing a newer one the user updated. FFmpeg and Deno do get it.
+- Data files of the packaged app are under `sys._MEIPASS` (`_internal\`), not anywhere reachable by walking up from `__file__` (`DIST_INDEX` in `main.py`).
+- When FFmpeg's version changes, change `fetch_binaries.py` and `packaging/licenses/FFmpeg-SOURCE.txt` together (the source link must point at the build actually shipped).
+- `installer.iss` contains Chinese; save it as UTF-8 with a BOM.
+- The mutex name created in `main.py` and `AppMutexName` in `installer.iss` must match.
+- Releases are built by `.github/workflows/release.yml` (reasons in `0020`): pushing a `v*` tag creates a draft Release; a manual run only keeps an artifact. Only the installer and its `.sha256` are uploaded; the workflow never gets `--test-update-source` (`test_update_source.py` catches it).
+- Without `--test-update-source`, `build_installer.py` checks that `packaging/output/` holds only those two files and that Inno's file list (`OutputManifestFile`) has no marker file; `--release-tag` must equal `v<__version__>`. Don't remove these checks.
+- uv.lock writes the version the PEP 440 way (`1.0.0rc1`); `test_version.py` normalizes it before comparing. Change all three together.
+- Actions in workflows are pinned to commit SHAs; Inno Setup (7.1.1) and gitleaks (8.30.1) have their version and SHA-256 written in. Change the hashes when upgrading.
+- The exe's version information is made by the spec from `__version__`; the numeric version has only the first three parts (`x.y.z.0` for rc and final alike). No email or personal data in it.
+- The `.sha256` is written with LF line endings: GNU `sha256sum -c` before coreutils 9.0 rejects CRLF (`test_build_installer.py`).
+- Third-party licenses (`0021`): `build_installer.py` writes `build/licenses/` — the license files of every Python package the backend needs (walked from `pyproject.toml`'s dependencies, as installed in `backend/.venv`) plus Python's own, and the npm packages Vite bundled (`build.license` in `vite.config.ts`). The build fails if a package has no license file; a package that ships none gets one kept in `packaging/licenses/` and listed in `SEPARATE_LICENSES`. The installer puts both folders into `{app}\licenses`.
 
-### App 更新（依據見 `docs/decisions/0019`）
+### App updates (reasons in `docs/decisions/0019`)
 
-- 安裝檔與檢查碼的網址只由版本號組成（`releases.py`），版本號先過 `domain/version.py`。不要改成用 GitHub 回應裡的網址或檔名。
-- 檢查碼對不上、看不懂、下載不完整：一律不執行，刪掉下載的檔案。核對失敗的路徑不可以有「先執行再說」的例外。
-- 安裝程式用 `process.launch_detached()` 啟動，**不可以**用 `JobProcess`：App 一結束 Job 就會把安裝程式一起結束。
-- App 叫安裝程式時**不加** `/SUPPRESSMSGBOXES`：那會讓「請關閉 App」框的答案變成取消，安裝程式默默結束。
-- `installer.iss` 的 `AllowCancelDuringInstall=no` 不要拿掉：Inno 取消時不會還原被換掉的檔案與 `[InstallDelete]` 刪掉的 `_internal`，App 會開不起來。
-- 安裝程式等 App 結束的程式在 `InitializeSetup` 裡：Inno 在它之後只檢查一次 AppMutex。
-- 測試用的更新來源只能由 `build_installer.py --test-update-source` 打開（標記檔 `update-source-test`，三處名字一致）；`…-TEST.exe` 絕不上傳。`test_update_source.py` 擋。
-- `http.py` 允許 http 只有一個例外：測試來源的 `127.0.0.1`，而且要呼叫的人明確傳 `loopback_http=True`。
-- 下載安裝檔的主機清單用完整的名字，不要放 `githubusercontent.com`（`raw.githubusercontent.com` 是任何人的檔案）。
-- yt-dlp 的自動更新只在打包後執行（`main.py`）；開發時 `bin/` 的 yt-dlp 不能自己變。
+- The installer and checksum URLs are built from the version only (`releases.py`), after the version passes `domain/version.py`. Don't switch to URLs or file names from GitHub's response.
+- A checksum that doesn't match, can't be read, or a download that isn't complete: never run it, delete the downloaded file. The failure path has no "run it anyway" exception.
+- The installer starts with `process.launch_detached()`, **never** `JobProcess`: when the app ends, the Job would end the installer too.
+- The app starts the installer **without** `/SUPPRESSMSGBOXES`: it makes the answer to the "close the app" box Cancel, and the installer quietly ends.
+- Don't remove `AllowCancelDuringInstall=no` from `installer.iss`: when Inno cancels, it doesn't restore replaced files or the `_internal` deleted by `[InstallDelete]`, and the app won't start.
+- The installer's wait for the app to end is in `InitializeSetup`: after it, Inno checks AppMutex only once.
+- The test update source can only be switched on by `build_installer.py --test-update-source` (marker file `update-source-test`, the same name in three places); `…-TEST.exe` is never uploaded. `test_update_source.py` catches it.
+- `http.py` allows http in one case only: the test source's `127.0.0.1`, and only when the caller explicitly passes `loopback_http=True`.
+- The host list for downloading the installer uses full names; never add `githubusercontent.com` (`raw.githubusercontent.com` serves anyone's files).
+- Automatic yt-dlp updates run only in a packaged app (`main.py`); during development the yt-dlp in `bin/` must not change by itself.
 
-### UI 工作流程（ui-ux-pro-max + frontend-design）
+### UI workflow (ui-ux-pro-max + frontend-design)
 
-本專案框架：react
-設計規範檔：`design-system/media-downloader/MASTER.md`（畫面專屬規則在 `pages/` 底下，會覆寫 MASTER）
+Framework for this project: react
+Design rules: `design-system/media-downloader/MASTER.md` (screen-specific rules under `pages/` override MASTER)
 
-做任何 UI 前：
+Before any UI work:
 
-1. 先讀 MASTER.md；有對應的 `pages/<畫面>.md` 就以它為準。
-2. 用 ui-ux-pro-max 查規則：`--stack react`、`--domain web`、`--domain ux`。
-3. 不要自行重新產生 design system 或用 `--force` 覆寫 MASTER.md，要改先問。
+1. Read MASTER.md first; if there is a matching `pages/<screen>.md`, it wins.
+2. Look up rules with ui-ux-pro-max: `--stack react`, `--domain web`, `--domain ux`.
+3. Don't regenerate the design system or overwrite MASTER.md with `--force`; ask before changing it.
 
-實作時的規則（依據見 `MASTER.md`，階段 2 檢查樣張時定的）：
+Implementation rules (reasons in `MASTER.md`, set when the stage 2 mock-ups were checked):
 
-- 顏色只用 `frontend/src/index.css` 的語意變數，元件裡不寫色碼。新的文字與背景組合先算對比，加進 MASTER 的對比表。
-- 芥末黃只當 MP3 標籤的底色；分隔線色不當控制項邊框。兩個的對比都不夠。
-- 佇列的列高固定（72），任何狀態都不能改變列高；預覽區塊同理（172）。
-- 清單裡重複出現的按鈕，`aria-label` 要帶項目標題。
-- 介面的狀態放 `frontend/src/stores/`（Zustand）；元件透過 stores 做事，stores 透過 `api/` 叫後端。`start()` 在 `main.tsx` 的 React 外面呼叫，畫面壞掉時事件也照常收。依據見 `docs/decisions/0013`。
-- 關閉確認（`ConfirmCloseDialog`）要放在主內容區的錯誤邊界**外面**，而且自己訂閱 `onCloseRequested`：它壞掉時不再訂閱，`api/` 才會直接關窗。不要把訂閱搬進 store，那樣畫面壞了視窗會關不掉。
-- 更新前的確認（`AppUpdateDialog`）也放在畫面外面：安裝檔可能在使用者看別的畫面時準備好，藏起來（`hidden`）的畫面裡的 `<dialog>` 不會出現。
-- 預覽「當下選的格式」放在 store 不放元件：連續貼網址時要用它自動加入。
-- 晚到的 `lookup` 結果靠查詢編號丟掉；新的查詢、關閉預覽、加入佇列都要讓編號前進。
-- 元件測試用 jsdom（檔案開頭 `// @vitest-environment jsdom`），用假的 `window.pywebview.api` 測真的 `api/` 與 stores。jsdom 沒有 `<dialog>` 的 `showModal()`，測試裡自己補。
-- pywebview 視窗的寬高含標題列與外框：960x680 的網頁實際約 947x645，720x520 約 707x485。
-- 超過 100 列的清單用 `frontend/src/virtual.ts`（列高固定），不另外加套件；有焦點的那一列要傳給它保留，否則捲走時焦點會掉。依據見 `docs/decisions/0014`。
-- 一次對很多項目叫橋接層時一起送出（`Promise.all`），不要一個等一個：一次往返約 0.1 秒，93 個要 9.8 秒。
-- 事件一個一個送進網頁約 17 ms 一個，所以 `EventSender` 會把排在一起的 `tasksChanged` 合成一個送（`0014`）。介面處理 `tasksChanged` 不可以對每個任務掃整個佇列（用 Map）：一個事件可能帶幾千個任務。
-- 用滑鼠打開的確認視窗，Chromium 會把焦點給按鈕卻不畫焦點框（`:focus-visible` 看上一次是不是鍵盤）。`ConfirmDialog` 先 `blur()` 再 `focus({ focusVisible: true })`：`showModal()` 已經把焦點給了第一顆按鈕，對它再 `focus()` 不會有任何改變。jsdom 驗不到，要在真視窗用真的滑鼠點擊驗。
-- 關著的 `<dialog>` 還在 DOM 裡：測試找確認視窗裡的按鈕要用 `within(dialog)`，用文字找按鈕時要排除 `dialog` 裡的。
-- 動作後焦點會移到下一個同類按鈕的（歷史的刪除），或焦點留在同一個元素、它卻變成另一個動作的（佇列列內的按鈕：取消 → 重新加入），以及會來回切換的按鍵（播放列表的空白鍵）要忽略按住不放產生的重複按鍵（`onKeyDown` 裡 `e.repeat` 時 `preventDefault()`），否則按住 Enter 會一路刪下去。不要用 `onkeydown` 屬性回傳 `false`：那會連第一下也擋掉。
-- 佇列列內的按鈕依狀態換一組，第一顆在每個狀態都用 `key="first"`：React 才會沿用同一個元素，焦點留在列裡。拿掉 key 或在它前面插 `false` 這類條件元素，焦點會掉到頁面上（`components.test.tsx` 的 focus 測試會擋）。依據見 `docs/decisions/0017`。
-- 列內浮出全文的區塊（`rowTitle.tsx`）用 `position: fixed` 放在文字欄的位置：清單本身會捲動（`overflow`），用 `absolute` 的話比那一列高的部分會被切掉、清單還多出捲軸。所以捲動（capture）和改視窗大小時要把它收起來；顯示中每次重畫都要重新量（狀態一變按鈕就換，文字欄寬度和被截斷的部分都跟著變，不重量會蓋住新按鈕）。列的祖先不可以加 `transform`，否則 `fixed` 會被困在裡面。
-- 可能上千的數量在語言檔寫 `{{count, number}}`（千分位）。
-- 每個畫面都一直掛著，其他的用 `hidden` 藏起來（`stores/page.ts`）：切回來時預覽、勾選、捲動位置都還在。不要改成依畫面條件渲染，那樣切走就全部重來。依據見 `docs/decisions/0015`。
-- 焦點要移到「刪除後會出現在那裡的元素」時，在呼叫後端之前就記下目標：store 一改清單就重畫，等 `await` 回來再記會來不及。
-- 列內的文字要在最小視窗（707 寬）的英文介面量過：歷史的列有三顆按鈕，標題欄只剩約 160 px。
-- 按下後要停用、焦點又還在它上面的按鈕（「檢查更新」）用 `aria-disabled` 加 `pointer-events-none`，不用 `disabled`：`disabled` 會讓焦點掉到頁面上。
-- 設定的控制項先照使用者選的改 store，再叫 `update_settings`（`stores/settings.ts` 的 `changeSettings`）：等回覆才改，單選按鈕會先跳回舊值。測試裡假的 `update_settings` 要記住之前的改動，不然每次回覆都把別的欄位改回預設。
-- `get_about` 第一次要開三個程式（約 1.5 秒），只在第一次進設定頁時叫；`update_engine` 更新成功後要再叫一次，後端更新後會忘掉版本（`0016`）。
-- 這個專案沒有 jest-dom：測試用 `.checked`、`.value`、`.textContent`、`getAttribute`，不要用 `toBeChecked()` 之類。
+- Colors come only from the semantic variables in `frontend/src/index.css`; no color codes in components. Work out the contrast of any new text/background pair first and add it to MASTER's contrast table.
+- Mustard yellow is only the background of the MP3 tag; the divider color is never a control border. Neither has enough contrast.
+- Queue rows have a fixed height (72) that no status may change; the preview block likewise (172).
+- Buttons repeated in a list carry the item's title in their `aria-label`.
+- UI state lives in `frontend/src/stores/` (Zustand); components act through stores, and stores call the backend through `api/`. `start()` is called outside React in `main.tsx`, so events still arrive when a screen breaks. Reasons in `docs/decisions/0013`.
+- The close confirmation (`ConfirmCloseDialog`) sits **outside** the main content's error boundary and subscribes to `onCloseRequested` itself: when it breaks it stops subscribing, so `api/` closes the window directly. Don't move the subscription into a store, or a broken screen leaves a window that can't be closed.
+- The pre-update confirmation (`AppUpdateDialog`) also sits outside the screens: the installer may be ready while the user is on another screen, and a `<dialog>` inside a `hidden` screen never shows.
+- The preview's "currently chosen format" lives in the store, not the component: pasting URLs in a row uses it to add automatically.
+- A late `lookup` result is dropped by its lookup number; a new lookup, closing the preview and adding to the queue all move the number forward.
+- Component tests use jsdom (`// @vitest-environment jsdom` at the top of the file) and test the real `api/` and stores against a fake `window.pywebview.api`. jsdom has no `<dialog>` `showModal()`; tests provide it.
+- pywebview window sizes include the title bar and frame: a 960x680 page is really about 947x645, and 720x520 about 707x485.
+- Lists that may exceed 100 rows use `frontend/src/virtual.ts` (fixed row height), no extra package; pass it the focused row to keep, or focus is lost when it scrolls away. Reasons in `docs/decisions/0014`.
+- When calling the bridge for many items, send them together (`Promise.all`), not one after another: a round trip is about 0.1 s, so 93 of them take 9.8 s.
+- Sending events into the page one at a time costs about 17 ms each, so `EventSender` merges queued `tasksChanged` into one (`0014`). The UI's `tasksChanged` handling must not scan the whole queue for each task (use a Map): one event may carry thousands of tasks.
+- For a confirmation opened with the mouse, Chromium gives the button focus but draws no focus ring (`:focus-visible` looks at whether the last input was the keyboard). `ConfirmDialog` calls `blur()` and then `focus({ focusVisible: true })`: `showModal()` already focused the first button, so calling `focus()` on it again changes nothing. jsdom can't check this; check it in the real window with a real mouse click.
+- A closed `<dialog>` is still in the DOM: tests find buttons in a confirmation with `within(dialog)`, and when finding a button by text, leave out the ones inside `dialog`.
+- Where focus moves on to the next button of the same kind after an action (deleting in history), where focus stays on the same element but it becomes another action (buttons in a queue row: Cancel → Add again), and for toggling keys (Space in the playlist), ignore the repeats from holding a key down (`preventDefault()` in `onKeyDown` when `e.repeat`); otherwise holding Enter keeps deleting. Don't return `false` from an `onkeydown` attribute: that blocks the first press too.
+- Buttons in a queue row change with the status, and the first one has `key="first"` in every status: React then keeps the same element and focus stays in the row. Removing the key, or putting a conditional element such as `false` before it, drops focus onto the page (the focus test in `components.test.tsx` catches it). Reasons in `docs/decisions/0017`.
+- The in-row block showing the full text (`rowTitle.tsx`) is `position: fixed` over the text column: the list itself scrolls (`overflow`), so with `absolute` the part taller than the row is clipped and the list grows a scroll bar. It is therefore closed on scroll (capture) and window resize; while shown it is measured again on every render (when the status changes the buttons change, and with them the text column's width and what is cut off; without measuring again it covers the new buttons). No ancestor of a row may get a `transform`, or `fixed` is trapped inside it.
+- Counts that may reach thousands are written `{{count, number}}` in the language files (thousands separators).
+- Every screen stays mounted and the others are hidden with `hidden` (`stores/page.ts`): switching back keeps the preview, the ticks and the scroll position. Don't switch to rendering by screen, or everything starts over when you leave. Reasons in `docs/decisions/0015`.
+- When focus has to move to "the element that will be there after the delete", note the target before calling the backend: the store redraws the list as soon as it changes, and noting it after the `await` is too late.
+- Measure in-row text in the English UI at the smallest window (707 wide): a history row has three buttons, leaving about 160 px for the title.
+- A button that must be disabled after a press while focus is still on it ("Check for updates") uses `aria-disabled` with `pointer-events-none`, not `disabled`: `disabled` drops focus onto the page.
+- Settings controls change the store to what the user chose first, then call `update_settings` (`changeSettings` in `stores/settings.ts`): waiting for the reply makes radio buttons jump back to the old value first. In tests, a fake `update_settings` must remember earlier changes, or every reply sets the other fields back to their defaults.
+- `get_about` starts three programs the first time (about 1.5 s); call it only the first time the settings screen opens. Call it again after `update_engine` succeeds, because the backend forgets the version after an update (`0016`).
+- This project has no jest-dom: tests use `.checked`, `.value`, `.textContent`, `getAttribute`, not `toBeChecked()` and the like.
 
-視覺決策：
+Visual decisions:
 
-- 配色、字體、版面、動畫多寡、介面文案依 frontend-design。
-- ui-ux-pro-max 的 `--design-system` 只當候選；它給的落地頁版型在 App 畫面中忽略。
+- Colors, fonts, layout, amount of motion and UI copy follow frontend-design.
+- ui-ux-pro-max's `--design-system` output is only a candidate; ignore the landing-page layouts it gives for app screens.
 
-規則衝突時：
+When rules conflict:
 
-- 無障礙、平台慣例、框架寫法依 ui-ux-pro-max。
-- 配色、字體、版面、動畫多寡、介面文案依 frontend-design。
-- 作者明講的需求優先於兩者。
+- Accessibility, platform conventions and framework practice follow ui-ux-pro-max.
+- Colors, fonts, layout, amount of motion and UI copy follow frontend-design.
+- What the author explicitly asks for beats both.
 
-交付前：
+Before delivering:
 
-- 文字對比 4.5:1、可點擊區域夠大、焦點可見、尊重減少動態設定。
-- 按鈕文字說清楚動作，同一動作全流程用同一個詞。
-- 錯誤訊息說明哪裡錯、怎麼修；空畫面要引導下一步。
+- Text contrast 4.5:1, large enough click targets, visible focus, respect for reduced motion.
+- Button text says what the action does, and the same action uses the same word throughout.
+- Error messages say what went wrong and how to fix it; empty screens lead to the next step.
 
-### App 圖示
+### App icon
 
-- 顏色以 `design-system/media-downloader/MASTER.md` 為準。
-- 需要 App 圖示時一律用 `brand/` 裡的檔案（Windows 用 `brand/icons/app.ico`），不要重畫。
-- 只有作者明確要求做圖示或品牌相關的工作時，才用 logo-design。
+- Colors follow `design-system/media-downloader/MASTER.md`.
+- When an app icon is needed, use the files in `brand/` (on Windows, `brand/icons/app.ico`); never redraw it.
+- Use logo-design only when the author explicitly asks for icon or brand work.

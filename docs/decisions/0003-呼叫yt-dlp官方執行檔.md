@@ -1,6 +1,6 @@
 <!--
 這個資料夾是什麼：架構決策紀錄（ADR），一個重大決定一份（NNNN-標題.md，編號遞增）。
-推上 GitHub：可以。公開前改寫成英文。
+推上 GitHub：可以。維持中文（只有 README.md、CHANGELOG、CLAUDE.md 是英文，見 0021）。
 -->
 
 # 0003. 呼叫 yt-dlp 官方執行檔

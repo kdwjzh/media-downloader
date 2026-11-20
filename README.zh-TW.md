@@ -1,16 +1,45 @@
 <!--
 這個檔案是什麼：media-downloader 的使用說明：是什麼、怎麼安裝、怎麼用、怎麼更新。
-功能或使用方式有變就更新；README.md 和 README.zh-TW.md 要一起改。
-推上 GitHub：可以。公開前 README.md 改寫成英文。
+功能或使用方式有變就更新；README.md 和 README.zh-TW.md 一段對一段，要一起改。
+推上 GitHub：可以。
 -->
 
 [English](README.md) | [繁體中文](README.zh-TW.md)
 
-# media-downloader
+# Media Downloader
 
-以抓音樂為主、影片為輔的 Windows 桌面下載器，用下載佇列一次處理多首歌和整個播放列表。
+從 YouTube 下載音樂（MP3）與影片（MP4）的 Windows 桌面程式。可以一次貼很多個網址或整個播放列表，由下載佇列依序處理。
+
+- 佇列：同時下載多個，每個項目有自己的進度；可以取消、重試、重新加入。
+- 播放列表與頻道：列出全部影片，勾選要下載的。
+- MP3 有 128／192／320 kbps，並嵌入封面；MP4 只列這支影片實際有的畫質。
+- 下載完成的歷史紀錄；介面有繁體中文與英文。
+
+## 系統需求
+
+- Windows 10 或 11，64 位元。
+- Microsoft Edge WebView2 執行階段。Windows 11 內建；較舊的 Windows 10 如果沒有，安裝程式會提示並告訴你去哪裡下載。
+- 只支援、只測試 YouTube。
 
 ## 安裝
+
+1. 打開 [Releases](https://github.com/kdwjzh/media-downloader/releases) 頁面，從最新版本下載兩個檔案：
+   - `MediaDownloader-Setup-<版本>.exe`（安裝檔）
+   - `MediaDownloader-Setup-<版本>.exe.sha256`（檢查碼）
+2. 確認安裝檔沒有損壞或被改過（可以略過，建議做）。在下載的資料夾開 PowerShell：
+
+   ```powershell
+   (Get-FileHash .\MediaDownloader-Setup-<版本>.exe -Algorithm SHA256).Hash
+   Get-Content .\MediaDownloader-Setup-<版本>.exe.sha256
+   ```
+
+   兩串長字串要相同（第一串是大寫，不影響）。Linux 或 macOS：`sha256sum -c MediaDownloader-Setup-<版本>.exe.sha256`（macOS 用 `shasum -a 256 -c …`）要顯示 `OK`。
+3. 執行安裝檔。安裝檔沒有程式碼簽章，Windows 可能會出現藍色的「**Windows 已保護您的電腦**」視窗。按「**其他資訊**」，確認應用程式是 `MediaDownloader-Setup-<版本>.exe`，再按「**仍要執行**」。
+   <!-- 5d：確切文字要對照 Windows Sandbox 的截圖。 -->
+4. 照安裝程式的步驟進行。只裝給目前的使用者，不需要系統管理員權限：
+   - App：`%LOCALAPPDATA%\Programs\Media Downloader`
+   - yt-dlp、FFmpeg、Deno：`%LOCALAPPDATA%\media-downloader\bin`
+5. 從開始功能表開啟 **Media Downloader**。
 
 ## 使用方式
 
@@ -64,12 +93,77 @@
 - 檔名重複時：略過、覆蓋（舊檔案會被取代，無法復原）或自動改名。
 - 預設格式：MP3 音質與 MP4 畫質，跟預覽記住的是同一組。
 - 語言：跟隨系統、繁體中文、English。
-- 更新：yt-dlp 可以按「檢查更新」更新（可能要二十秒左右）。Media Downloader 有新版時，導覽列的「設定」旁會出現圓點，設定頁有「前往下載」；不會跳出視窗。
+- 更新：見[更新](#更新)。
 - 關於：版本、授權、使用的元件，以及「原始碼」與「開啟記錄檔資料夾」。
 
 ## 更新
 
+- **Media Downloader**：有新版時，導覽列的「設定」旁會出現圓點。到設定按「立即更新」：App 會下載新版的安裝檔、核對 SHA-256、關閉、安裝，然後重新開啟。設定與歷史紀錄都會保留。還有下載在進行時會先問你。你按下之前不會下載任何東西。
+- **yt-dlp**（實際從 YouTube 下載的程式）在 App 啟動時會在背景自動更新，一天最多一次。也可以在設定裡 yt-dlp 那一列按「檢查更新」（可能要二十秒左右）。YouTube 改了什麼、下載開始失敗時，通常更新它就會好。
+
+## 解除安裝
+
+打開 Windows 的「**設定 → 應用程式 → 已安裝的應用程式**」（Windows 10 是「**應用程式與功能**」），找到 **Media Downloader**，選「解除安裝」。解除安裝時會問要不要一併刪除設定、歷史紀錄與記錄檔；選「否」會保留，之後重新安裝還能使用。yt-dlp、FFmpeg、Deno 一律會刪除。下載的檔案不會被動到。
+
+## 資料存在哪裡
+
+| 內容 | 位置 |
+| --- | --- |
+| 設定與歷史紀錄 | `%APPDATA%\media-downloader` |
+| 記錄檔 | `%LOCALAPPDATA%\media-downloader\logs` |
+| yt-dlp、FFmpeg、Deno | `%LOCALAPPDATA%\media-downloader\bin` |
+| 下載的檔案 | 你的「下載」資料夾，或設定裡選的資料夾 |
+
+記錄檔不會記影片標題，路徑裡的使用者資料夾也會遮掉。
+
 ## 常見問題
+
+**錯誤訊息是什麼意思？**
+
+| 訊息 | 意思 |
+| --- | --- |
+| 這是私人影片 | 只有上傳者允許的人看得到。 |
+| 這支影片有年齡限制／這是會員限定影片 | 要登入帳號才能看，目前不支援。 |
+| 你的地區無法觀看這支影片 | 上傳者限制了可觀看的地區。 |
+| 找不到這支影片／找不到這個播放列表 | 已被移除、設為私人，或網址有誤。 |
+| 目前不支援直播 | 等直播結束、影片上架後再試。 |
+| 不支援這個網站 | 只接受 YouTube 的網址。 |
+| 連不上網路 | 檢查網路連線後按「重試」。 |
+| 下載時發生未預期的問題 | 先重試；一直失敗時到設定更新 yt-dlp。「開啟記錄檔」可以看詳細原因。 |
+
+**可以下載有年齡限制或會員限定的影片嗎？** 不行。這些要用你的帳號登入，這個 App 不做登入。
+
+**可以用在其他網站嗎？** 只支援、只測試 YouTube。
+
+**為什麼執行安裝檔時 Windows 會警告？** 安裝檔沒有程式碼簽章（憑證要每年付費）。照[安裝](#安裝)第 3 步略過；想確定檔案就是這裡發佈的那一個，可以核對 SHA-256。
+
+**4K 影片播不出來。** YouTube 的 4K 是 VP9 編碼，部分播放器不支援。可以換 VLC 這類播放器，或改選 1080p。
+
+## 使用條款
+
+這個 App 只是工具。你要自行確認下載的內容與使用方式，在你所在的地區合法，並且符合下載來源網站的使用條款。只下載你有權下載的內容。
+
+## 授權與第三方元件
+
+Media Downloader 以 [MIT 授權](LICENSE)發佈。
+
+安裝檔包含以下元件，各自依自己的授權：
+
+| 元件 | 授權 | 說明 |
+| --- | --- | --- |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Unlicense | 從 YouTube 下載 |
+| [FFmpeg](https://ffmpeg.org/) | GPL-3.0-or-later | 轉檔與合併；未經修改，取自 [yt-dlp/FFmpeg-Builds](https://github.com/yt-dlp/FFmpeg-Builds/releases/tag/autobuild-2026-10-31-18-18)。原始碼：[這個建置的 FFmpeg commit](https://github.com/FFmpeg/FFmpeg/tree/6d1bfd760916ab52814b950692d1c1635d29f3c7)與[建置腳本](https://github.com/yt-dlp/FFmpeg-Builds/tree/5ece62897c650b863c1ddda7b6964845344aef2d) |
+| [Deno](https://github.com/denoland/deno) | MIT | yt-dlp 需要的 JavaScript 執行環境 |
+| [Noto Sans TC](https://fonts.google.com/noto/specimen/Noto+Sans+TC) | OFL-1.1 | 字體 |
+| [Bricolage Grotesque](https://github.com/ateliertriay/bricolage) | OFL-1.1 | 字體 |
+| [pywebview](https://github.com/r0x0r/pywebview) | BSD-3-Clause | App 的視窗（含微軟的 WebView2 SDK） |
+| [truststore](https://github.com/sethmlarson/truststore) | MIT | 讓 Windows 驗證憑證 |
+
+App 裡還有 Python 執行環境與其他 Python 套件，以及 React 等 npm 套件。上面這些和它們的授權全文，都在 App 安裝資料夾的 `licenses` 資料夾（`%LOCALAPPDATA%\Programs\Media Downloader\licenses`）。
+
+## 文件語言
+
+英文版 README、[CHANGELOG.md](CHANGELOG.md) 與 [CLAUDE.md](CLAUDE.md) 是英文；[`docs/`](docs/) 與 [`design-system/`](design-system/) 的設計文件是繁體中文。
 
 ## 開發
 
@@ -85,16 +179,16 @@ cd backend && uv sync && uv run pre-commit install
 cd frontend && npm install
 ```
 
+下載外部程式（yt-dlp、FFmpeg、Deno）到 `bin/`，並核對來源提供的 SHA-256；`bin/` 不進 git：
+
+```bash
+python scripts/fetch_binaries.py
+```
+
 啟動開發環境（同時啟動介面的開發伺服器與桌面視窗；關掉視窗就會一起結束）：
 
 ```bash
 python scripts/dev.py
-```
-
-下載外部程式（yt-dlp、FFmpeg、Deno）到 `bin/`，並核對官方提供的 SHA-256；`bin/` 不進 git：
-
-```bash
-python scripts/fetch_binaries.py
 ```
 
 送出前跑一鍵檢查（後端與介面的 lint、型別檢查、測試）：
@@ -103,12 +197,10 @@ python scripts/fetch_binaries.py
 python scripts/check.py
 ```
 
-打包安裝檔（需要 Inno Setup 7；從乾淨的狀態重新建置，產出與 SHA-256 在 `packaging/output/`）：
+打包安裝檔（需要 Inno Setup 7；從乾淨的狀態重新建置，安裝檔與 SHA-256 在 `packaging/output/`；開發伺服器要先關掉）：
 
 ```bash
 python scripts/build_installer.py
 ```
 
-## 授權
-
-[MIT](LICENSE)
+發佈：版本號是 `backend/app/__init__.py` 的 `__version__`（由測試確保與 `pyproject.toml`、`uv.lock` 一致）。推 `v<版本>` tag 時，GitHub Actions 會跑檢查、打包安裝檔與 `.sha256`，並建立 draft Release，由人手動發佈。帶 `-rc.N` 的版本標成 pre-release。
