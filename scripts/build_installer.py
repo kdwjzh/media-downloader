@@ -86,6 +86,16 @@ def check_release_output(app_version: str, manifest: str, files: list[str]) -> l
     return problems
 
 
+def write_checksum(installer: Path) -> str:
+    """Write <installer>.sha256 next to it in sha256sum's format and return the digest."""
+    digest = hashlib.sha256(installer.read_bytes()).hexdigest()
+    # LF even on Windows: GNU sha256sum -c before coreutils 9.0 rejects CRLF.
+    installer.with_name(f"{installer.name}.sha256").write_text(
+        f"{digest}  {installer.name}\n", encoding="ascii", newline="\n"
+    )
+    return digest
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--test-update-source", action="store_true",
@@ -129,8 +139,7 @@ def main() -> int:
     )
 
     installer = OUTPUT / installer_name(app_version, test)
-    digest = hashlib.sha256(installer.read_bytes()).hexdigest()
-    (OUTPUT / f"{installer.name}.sha256").write_text(f"{digest}  {installer.name}\n")
+    digest = write_checksum(installer)
     print(f"\n{installer}\n  {installer.stat().st_size:,} bytes\n  SHA-256 {digest}")
     if not test:
         manifest = (BUILD / "installer-manifest.txt").read_text(encoding="utf-8", errors="replace")
