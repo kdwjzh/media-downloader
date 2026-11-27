@@ -108,3 +108,29 @@ def test_the_file_rotates_and_keeps_a_fixed_number_of_old_files(
     assert len(files) == BACKUPS + 1
     assert all(path.stat().st_size <= 2000 for path in (tmp_path / "logs").iterdir())
     assert "line 399" in (tmp_path / "logs" / "app.log").read_text("utf-8")
+
+
+def test_the_file_starts_with_a_bom_once_so_windows_powershell_reads_it_as_utf8(
+    logger: logging.Logger, tmp_path: Path
+) -> None:
+    # 1.0.1: Get-Content in Windows PowerShell 5.1 reads a file without a BOM in the system
+    # code page (cp950), and the Chinese part of a WebView2 error looked garbled.
+    log_file = tmp_path / "logs" / "app.log"
+    logger.info("系統找不到指定的檔案。")
+    logger.info("second line")
+    data = log_file.read_bytes()
+    assert data.startswith(b"\xef\xbb\xbf")
+    assert data.count(b"\xef\xbb\xbf") == 1  # appending adds no second one
+    for n in range(100):
+        logger.info("line %s %s", n, "x" * 50)
+    assert (tmp_path / "logs" / "app.log.1").exists()
+    assert log_file.read_bytes().startswith(b"\xef\xbb\xbf")  # the file started after rotating
+
+
+def test_a_file_reopened_later_gets_no_second_bom(tmp_path: Path) -> None:
+    log_file = tmp_path / "app.log"
+    for _ in range(2):  # two starts of the app
+        handler = file_handler(log_file, HOME)
+        handler.emit(logging.LogRecord("t", logging.INFO, "", 0, "started", None, None))
+        handler.close()
+    assert log_file.read_bytes().count(b"\xef\xbb\xbf") == 1

@@ -60,7 +60,9 @@ class _MaskingFormatter(logging.Formatter):
 def file_handler(log_file: Path, *homes: str, max_bytes: int = MAX_BYTES) -> RotatingFileHandler:
     log_file.parent.mkdir(parents=True, exist_ok=True)
     handler = RotatingFileHandler(
-        log_file, maxBytes=max_bytes, backupCount=BACKUPS, encoding="utf-8"
+        # The BOM (only at the start of a file) lets Windows PowerShell 5.1's Get-Content read it
+        # as UTF-8 instead of the system code page (ADR 0023).
+        log_file, maxBytes=max_bytes, backupCount=BACKUPS, encoding="utf-8-sig"
     )
     handler.setFormatter(_MaskingFormatter(homes))
     return handler
