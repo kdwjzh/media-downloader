@@ -8,7 +8,7 @@ import pytest
 
 from app.domain.engine import EngineError
 from app.domain.errors import ErrorCode
-from app.infrastructure.logging.setup import BACKUPS, file_handler, mask, masker
+from app.infrastructure.logging.setup import BACKUPS, file_handler, mask, masker, short_path
 
 HOME = "C:\\Users\\Some One"
 M = masker(HOME)
@@ -33,6 +33,28 @@ M = masker(HOME)
 )  # fmt: skip
 def test_the_users_folder_is_masked_however_it_is_written(text: str, masked: str) -> None:
     assert mask(text, M) == masked
+
+
+def test_the_short_8_3_name_of_the_users_folder_is_masked_too(tmp_path: Path) -> None:
+    # Windows often gives the 8.3 form (TEMP is C:\Users\SOMEON~1\AppData\Local\Temp);
+    # masking only the long form left the user's name in the log.
+    short = "C:\\Users\\SOMEON~1"
+    both = masker(HOME, short)
+    assert mask("C:\\Users\\SOMEON~1\\AppData\\Local\\Temp\\x", both) == (
+        "%USERPROFILE%\\AppData\\Local\\Temp\\x"
+    )
+    assert mask("/c/Users/someon~1/bin", both) == "/c/%USERPROFILE%/bin"
+    assert mask(f"{HOME}\\Music", both) == "%USERPROFILE%\\Music"
+    assert mask("C:\\Users\\SOMEON~12\\x", both) == "C:\\Users\\SOMEON~12\\x"
+    handler = file_handler(tmp_path / "app.log", HOME, short)
+    record = logging.LogRecord("t", logging.INFO, "", 0, "temp is %s", (short + "\\Temp",), None)
+    assert "SOMEON~1" not in handler.format(record)
+    handler.close()
+
+
+def test_short_path_falls_back_to_the_path_it_was_given() -> None:
+    missing = "C:\\no such folder here\\at all"
+    assert short_path(missing) == missing
 
 
 def test_a_signed_media_url_loses_its_query_but_a_video_url_does_not() -> None:

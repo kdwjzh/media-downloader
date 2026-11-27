@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- The log also masks the short (8.3) form of your user folder, such as `C:\Users\SOMEON~1`, which Windows uses in some paths.
+
 ## [1.0.0] - 2026-11-27
 
 The first public version of Media Downloader, a Windows app that downloads music (MP3) and video (MP4) from YouTube.
