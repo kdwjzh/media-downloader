@@ -250,6 +250,24 @@ Internal names (classes, tables, setting keys) never use "youtube" as a general 
 - The host list for downloading the installer uses full names; never add `githubusercontent.com` (`raw.githubusercontent.com` serves anyone's files).
 - Automatic yt-dlp updates run only in a packaged app (`main.py`); during development the yt-dlp in `bin/` must not change by itself.
 
+### Releasing a new version (reasons in `0020`, `0022`)
+
+Pushing the tag and publishing can't be undone: ask the author before each. A published tag or Release is never deleted or changed (only its notes); a problem means a new version. The repo has immutable releases on: a published Release's files and tag are locked, and a deleted one's tag name can't be used again.
+
+1. Pick the version from what `[Unreleased]` holds (SemVer: a fix → patch, a feature → minor).
+2. Change it in the three places: `__version__` in `backend/app/__init__.py`, `backend/pyproject.toml`, `backend/uv.lock` (PEP 440 form there: `1.2.0rc1`).
+3. CHANGELOG: `[Unreleased]` becomes `[x.y.z] - YYYY-MM-DD` with the day the tag is pushed (change it again if the tag slips to another day); a new empty `[Unreleased]` goes above it; the links at the bottom get `[Unreleased]: …/compare/vx.y.z...HEAD` and `[x.y.z]: …/compare/v<previous>...vx.y.z`.
+4. `python scripts/check.py`, commit (noreply author, gitleaks), push, and wait for CI to pass.
+5. Push an annotated tag `vx.y.z` on that commit. `release.yml` must succeed in both jobs, with `MediaDownloader-Setup-x.y.z.exe: OK` in the release job's log; the draft holds exactly the installer and its `.sha256`, and is a pre-release only for `-rc.N`.
+6. Publish: Actions → Release → Run workflow on `main`, `publish` = the tag. Never a web edit page (see the Packaging rules).
+7. Paste the notes on `releases/edit/vx.y.z` once that page lists both files: the CHANGELOG section, with an Install line pointing to the README.
+8. Check after publishing:
+   - `api.github.com/repos/<repo>/releases/latest` returns the tag, `immutable: true`, two assets.
+   - Download both files from `releases/download/vx.y.z/…`: `sha256sum -c` prints OK, and every redirect host is in `download_hosts` in `releases.py` (if not, stop and report; don't widen the list).
+   - On a clean Windows (Sandbox), follow the English README: install, download a song, About shows the version.
+   - One-click update from the previous version. The installed app caches the version check for 24 hours: delete `%LOCALAPPDATA%\media-downloader\update-check.json` before starting it, or use a fresh Sandbox.
+   - Windows Sandbox's WebView2 registration can point to a version that isn't there (white window, "Couldn't find a compatible Webview2 Runtime" in the log). Start the app from a PowerShell that set `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER` to the folder under `%ProgramFiles(x86)%\Microsoft\EdgeWebView\Application`; the installer and the reopened app inherit it.
+
 ### UI workflow (ui-ux-pro-max + frontend-design)
 
 Framework for this project: react
