@@ -12,7 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-11-20
+## [1.0.0] - 2026-11-27
 
 The first public version of Media Downloader, a Windows app that downloads music (MP3) and video (MP4) from YouTube.
 
