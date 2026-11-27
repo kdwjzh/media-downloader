@@ -93,8 +93,9 @@ jobs:
           case "$version" in *-*) flags+=(--prerelease) ;; esac
           gh release create "$GITHUB_REF_NAME" "${flags[@]}" "dist/$installer" "dist/$installer.sha256"
 
-  # Publishing through the API (ADR 0022): the web form's "Publish release" dropped both
-  # files from v1.0.0, and an immutable release can't get them back.
+  # Publishing through the API (ADR 0022): v1.0.0 was published from releases/edit/v1.0.0,
+  # which isn't the draft's page (a draft's is edit/untagged-...), so it made a second,
+  # empty release for the tag; an immutable release can't get files back.
   publish:
     if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
