@@ -229,7 +229,7 @@ Internal names (classes, tables, setting keys) never use "youtube" as a general 
 - When FFmpeg's version changes, change `fetch_binaries.py` and `packaging/licenses/FFmpeg-SOURCE.txt` together (the source link must point at the build actually shipped).
 - `installer.iss` contains Chinese; save it as UTF-8 with a BOM.
 - The mutex name created in `main.py` and `AppMutexName` in `installer.iss` must match.
-- Releases are built by `.github/workflows/release.yml` (reasons in `0020`): pushing a `v*` tag creates a draft Release; a manual run only keeps an artifact. Only the installer and its `.sha256` are uploaded; the workflow never gets `--test-update-source` (`test_update_source.py` catches it).
+- Releases are built by `.github/workflows/release.yml` (reasons in `0020`): pushing a `v*` tag creates a draft Release; a manual run only keeps an artifact. A draft is published only by a manual run with the `publish` input (the tag), which checks the two files before and after (`0022`); never with the web page's "Publish release", which dropped both files from v1.0.0. Only the installer and its `.sha256` are uploaded; the workflow never gets `--test-update-source` (`test_update_source.py` catches it).
 - Without `--test-update-source`, `build_installer.py` checks that `packaging/output/` holds only those two files and that Inno's file list (`OutputManifestFile`) has no marker file; `--release-tag` must equal `v<__version__>`. Don't remove these checks.
 - uv.lock writes the version the PEP 440 way (`1.0.0rc1`); `test_version.py` normalizes it before comparing. Change all three together.
 - Actions in workflows are pinned to commit SHAs; Inno Setup (7.1.1) and gitleaks (8.30.1) have their version and SHA-256 written in. Change the hashes when upgrading.

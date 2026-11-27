@@ -8,12 +8,18 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Tag of a checked draft to publish (v1.2.3); leave empty to build only"
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
 jobs:
   build:
+    if: ${{ !inputs.publish }}
     runs-on: windows-latest
     timeout-minutes: 40
     steps:
@@ -86,3 +92,29 @@ jobs:
           flags=(--draft --verify-tag --title "$GITHUB_REF_NAME" --notes "")
           case "$version" in *-*) flags+=(--prerelease) ;; esac
           gh release create "$GITHUB_REF_NAME" "${flags[@]}" "dist/$installer" "dist/$installer.sha256"
+
+  # Publishing through the API (ADR 0022): the web form's "Publish release" dropped both
+  # files from v1.0.0, and an immutable release can't get them back.
+  publish:
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.publish }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "not a version tag: $TAG"; exit 1; }
+          version="${TAG#v}"
+          expected="$(printf '%s\n' "MediaDownloader-Setup-$version.exe" "MediaDownloader-Setup-$version.exe.sha256")"
+          files() { gh release view "$TAG" --json assets --jq '.assets[].name' | sort; }
+          [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true ] || { echo "$TAG is not a draft"; exit 1; }
+          [ "$(files)" = "$expected" ] || { echo "the draft doesn't hold exactly the two files:"; files; exit 1; }
+          gh release edit "$TAG" --draft=false
+          [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = false ] || exit 1
+          [ "$(files)" = "$expected" ] || { echo "published, but the files changed:"; files; exit 1; }
+          gh release view "$TAG" --json tagName,isPrerelease,assets --jq '{tagName, isPrerelease, assets: [.assets[] | {name, size}]}'
