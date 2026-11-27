@@ -12,6 +12,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- When the Microsoft Edge WebView2 Runtime is missing or broken, the app no longer opens an empty white window. It now says what is wrong, offers to open Microsoft's download page, and closes.
+- The log file now starts with a UTF-8 byte order mark, so Chinese text in it also reads correctly in Windows PowerShell 5.1 (`Get-Content`).
+
 ## [1.0.1] - 2026-11-27
 
 ### Fixed

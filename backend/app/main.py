@@ -6,6 +6,7 @@ window is gone, stop sending events and stop every download. See docs/decisions/
 
 import ctypes
 import logging
+import platform
 import sys
 import threading
 from pathlib import Path
@@ -15,7 +16,8 @@ import webview
 from app.bridge.api import BridgeApi
 from app.bridge.events import EventSender
 from app.composition import build
-from app.infrastructure import binaries
+from app.infrastructure import binaries, webview2
+from app.infrastructure.shell import WindowsShell
 
 DEV_URL = "http://localhost:5173"
 FROZEN = getattr(sys, "frozen", False)
@@ -24,6 +26,10 @@ _ROOT = Path(getattr(sys, "_MEIPASS", "")) if FROZEN else Path(__file__).resolve
 DIST_INDEX = _ROOT / "frontend" / "dist" / "index.html"
 # The installer looks for this name and asks the user to close the app first (installer.iss).
 APP_MUTEX = "MediaDownloaderAppMutex"
+# The same page installer.iss names when WebView2 is missing.
+WEBVIEW2_URL = "https://developer.microsoft.com/microsoft-edge/webview2/"
+_ARCH = "win-arm64" if platform.machine() == "ARM64" else "win-x64"
+_LOADER = Path(webview.__file__).parent / "lib/runtimes" / _ARCH / "native/WebView2Loader.dll"
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +39,25 @@ def show_error(message: str) -> None:
     there is no language setting to follow yet, so it is in both languages."""
     mb_iconerror = 0x10
     ctypes.windll.user32.MessageBoxW(None, message, "Media Downloader", mb_iconerror)
+
+
+def ask(message: str) -> bool:
+    """Like show_error, with Yes and No; True for Yes."""
+    mb_yesno, mb_iconerror, idyes = 0x4, 0x10, 6
+    flags = mb_yesno | mb_iconerror
+    return bool(ctypes.windll.user32.MessageBoxW(None, message, "Media Downloader", flags) == idyes)
+
+
+def webview2_message(code: int) -> str:
+    return (
+        "Media Downloader 無法開啟視窗：這台電腦上的 Microsoft Edge WebView2 Runtime "
+        "找不到或無法使用。\n請到微軟網站下載「Evergreen Standalone Installer」，"
+        f"安裝後再開啟 Media Downloader：\n{WEBVIEW2_URL}\n要現在開啟下載頁嗎？\n\n"
+        "Media Downloader could not open its window: the Microsoft Edge WebView2 Runtime on "
+        'this computer is missing or cannot be used.\nDownload the "Evergreen Standalone '
+        'Installer" from Microsoft, install it, then open Media Downloader again:\n'
+        f"{WEBVIEW2_URL}\nOpen the download page now?\n\n(0x{code:08X})"
+    )
 
 
 def fatal(error: Exception) -> None:
@@ -90,6 +115,15 @@ def main() -> None:
     except Exception as error:
         log.exception("could not start")  # reaches the log file if logging got that far
         fatal(error)
+        sys.exit(1)
+    # Without this check a broken runtime gives a white, empty window and no word why: pywebview
+    # only logs the failure (ADR 0023).
+    if (code := webview2.problem(_LOADER)) is not None:
+        # FormatError takes a signed 32-bit number; HRESULTs come unsigned.
+        text = ctypes.FormatError(code - (1 << 32) if code >= 1 << 31 else code)
+        log.error("WebView2 Runtime cannot be used: 0x%08X %s", code, text)
+        if ask(webview2_message(code)):
+            WindowsShell().open_url(WEBVIEW2_URL)
         sys.exit(1)
     backend.start()
     if FROZEN:

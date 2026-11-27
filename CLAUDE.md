@@ -175,6 +175,14 @@ Internal names (classes, tables, setting keys) never use "youtube" as a general 
 - The history database is renamed and started fresh only when it is certainly damaged (not a database, corrupt content); a full disk or a lock doesn't count.
 - Files, folders and web pages are opened without building a command line (no `explorer /select,`): use `infrastructure/shell.py`.
 - The log never records titles or file paths; a new log line that may contain a path relies on the masking in `logging/setup.py`, not on its own handling.
+- The log file is written as `utf-8-sig` (a BOM at the start of a file only): without it, Windows PowerShell 5.1's `Get-Content` reads it in the system code page and Chinese looks garbled (`0023`). Test steps that read it still pass `-Encoding UTF8`, for logs written before 1.0.2.
+
+### WebView2 (reasons in `docs/decisions/0023`)
+
+- pywebview picks Edge Chromium from the registry's `pv` alone and only logs a failed WebView2 start, leaving a white window. So `main.py` asks WebView2's own loader (`infrastructure/webview2.py`, `GetAvailableCoreWebView2BrowserVersionString`) before opening the window, and on failure shows the bilingual box and exits. Don't replace it with a timeout: slow machines were never measured.
+- When the loader itself can't be loaded the app opens the window as before: never block a machine where WebView2 may work.
+- Only `main.py` knows pywebview, so it passes the loader's path in.
+
 ### Bridge (reasons in `docs/decisions/0012`)
 
 - pywebview exposes every attribute of `BridgeApi` that doesn't start with an underscore to the page (and their attributes too): every member that isn't a command starts with an underscore. `test_bridge_api.py` checks that the exposed names are exactly the contract's commands.
