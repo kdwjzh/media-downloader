@@ -12,8 +12,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-27
+
 ### Fixed
 
+- The 1.0.0 release was published without its installer. 1.0.1 is the first release you can install.
 - The log also masks the short (8.3) form of your user folder, such as `C:\Users\SOMEON~1`, which Windows uses in some paths.
 
 ## [1.0.0] - 2026-11-27
@@ -60,5 +63,6 @@ The first public version of Media Downloader, a Windows app that downloads music
 - The app's own network requests verify certificates with Windows, like a browser.
 - The log masks your user folder in paths.
 
-[Unreleased]: https://github.com/kdwjzh/media-downloader/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/kdwjzh/media-downloader/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/kdwjzh/media-downloader/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/kdwjzh/media-downloader/releases/tag/v1.0.0

@@ -1,6 +1,6 @@
 [project]
 name = "media-downloader"
-version = "1.0.0"
+version = "1.0.1"
 description = "Windows desktop downloader for music and video"
 requires-python = ">=3.12"
 dependencies = [
