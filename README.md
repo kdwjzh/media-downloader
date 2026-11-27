@@ -202,4 +202,4 @@ Build the installer (needs Inno Setup 7; rebuilds from a clean state; the instal
 python scripts/build_installer.py
 ```
 
-Releases: the version is `__version__` in `backend/app/__init__.py` (kept equal to `pyproject.toml` and `uv.lock` by a test). Pushing a `v<version>` tag makes GitHub Actions run the checks, build the installer and its `.sha256`, and create a draft Release, which is published by hand. Versions with `-rc.N` are marked as pre-releases.
+Releases: the version is `__version__` in `backend/app/__init__.py` (kept equal to `pyproject.toml` and `uv.lock` by a test). Pushing a `v<version>` tag makes GitHub Actions run the checks, build the installer and its `.sha256`, and create a draft Release, which is published by running the Release workflow by hand with the tag as its `publish` input. Versions with `-rc.N` are marked as pre-releases.

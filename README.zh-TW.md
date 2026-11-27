@@ -202,4 +202,4 @@ python scripts/check.py
 python scripts/build_installer.py
 ```
 
-發佈：版本號是 `backend/app/__init__.py` 的 `__version__`（由測試確保與 `pyproject.toml`、`uv.lock` 一致）。推 `v<版本>` tag 時，GitHub Actions 會跑檢查、打包安裝檔與 `.sha256`，並建立 draft Release，由人手動發佈。帶 `-rc.N` 的版本標成 pre-release。
+發佈：版本號是 `backend/app/__init__.py` 的 `__version__`（由測試確保與 `pyproject.toml`、`uv.lock` 一致）。推 `v<版本>` tag 時，GitHub Actions 會跑檢查、打包安裝檔與 `.sha256`，並建立 draft Release；發佈時手動執行 Release workflow，在 `publish` 欄位填 tag。帶 `-rc.N` 的版本標成 pre-release。
